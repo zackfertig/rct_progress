@@ -6,6 +6,7 @@ def read_rct_progress(fname):
     bfilecontents = struct.unpack("B"*len(filecontents), filecontents)  # Read as bytes
     print(f"Read {len(bfilecontents)} bytes from {fname}")
     data = bfilecontents[:-4]
+    data = bytearray(data)
     checksum = struct.unpack("L", filecontents[-4:])[0]
     
     isvalid, calculated_checksum = verify_checksum(data, checksum)
@@ -15,8 +16,9 @@ def read_rct_progress(fname):
     else:
         print("Checksum valid")
     
+    data = decrypt_data(data)
     data = rle_decode(data)
-    decrypt_data(data)
+    
     print(f"Decoded into {len(data)} bytes")
     with open(fname + ".dec", 'wb') as f:
         f.write(struct.pack("B"*len(data), *data))
@@ -34,7 +36,8 @@ def decrypt_data(data):
     decrypted = bytearray()
     for i in range(len(dworddata)):
         #decrypted_dword = rotate_right(dworddata[i]+0x39393939, 5, 32)
-        decrypted_dword = rotate_right((dworddata[i]+39393939) % 2**32, 5, 32)
+        decrypted_dword = rotate_left(dworddata[i], 5, 32)
+        decrypted_dword = (decrypted_dword-0x39393939) % 2**32
         decrypted.extend(struct.pack("L", decrypted_dword))
     # Trim any added bytes
     data[:] = decrypted[:len(data)]
