@@ -5,11 +5,13 @@ Produces:
 - CSS0.decrypted.bin         (decrypted DWord stream)
 - css0_parsed.csv            (parsed table rows found)
 
-Usage: python decrypt_and_parse_css0.py
+Usage: python decrypt_and_parse_css0.py [--input CSS0.DAT] [--out csv]
 """
 from pathlib import Path
 import struct
 import csv
+import argparse
+import logging
 
 MAGIC_ADD = 0x39393939
 MASK32 = 0xFFFFFFFF
@@ -112,26 +114,44 @@ def parse_and_write(decomp: bytes, decrypted: bytes, out_csv: Path):
     return rows
 
 def main():
-    root = Path(__file__).resolve().parents[1]
-    raw = (root / 'CSS0.DAT').read_bytes()
+    parser = argparse.ArgumentParser(description='Decompress and decrypt a CSS0.DAT file and parse it to CSV.')
+    parser.add_argument('--input', '-i', default='CSS0.DAT', help='Path to input CSS0.DAT file (default: CSS0.DAT)')
+    parser.add_argument('--out', '-o', default='css0_parsed.csv', help='Output CSV filename (default: css0_parsed.csv)')
+    parser.add_argument('--verbose', '-v', action='store_true', help='Write intermediate decompressed/decrypted binary files and print extra info')
+    args = parser.parse_args()
+
+    # allow input to be absolute or relative; prefer given path
+    inp_path = Path(args.input)
+    if not inp_path.is_absolute():
+        # treat relative to repo root (two levels up from this file)
+        root = Path(__file__).resolve().parents[1]
+        inp_path = root / args.input
+    if not inp_path.exists():
+        # configure basic logger so caller sees message
+        logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+        logger = logging.getLogger(__name__)
+        logger.error('Input file not found: %s', inp_path)
+        raise FileNotFoundError(f'Input file not found: {inp_path}')
+    # configure logging now that args are available
+    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format='%(levelname)s: %(message)s')
+    logger = logging.getLogger(__name__)
+    raw = inp_path.read_bytes()
     # decompress raw (omit last 4 bytes of raw as checksum)
     decompr_raw = rle_decompress(raw)
-    (root / 'CSS0.decompressed.raw.bin').write_bytes(decompr_raw)
-    print('Wrote CSS0.decompressed.raw.bin size', len(decompr_raw))
+    # write decompressed / decrypted outputs next to input file
+    out_dir = inp_path.parent
+    if args.verbose:
+        (out_dir / 'CSS0.decompressed.raw.bin').write_bytes(decompr_raw)
+        logger.info('Wrote %s size %d', out_dir / 'CSS0.decompressed.raw.bin', len(decompr_raw))
     # decrypt decompressed bytes (little-endian assumption)
     decrypted = decrypt_dwords_le(decompr_raw)
-    (root / 'CSS0.decrypted.bin').write_bytes(decrypted)
-    print('Wrote CSS0.decrypted.bin size', len(decrypted))
+    if args.verbose:
+        (out_dir / 'CSS0.decrypted.bin').write_bytes(decrypted)
+        logger.info('Wrote %s size %d', out_dir / 'CSS0.decrypted.bin', len(decrypted))
     # parse and write csv
-    outcsv = root / 'css0_parsed.csv'
+    outcsv = out_dir / args.out
     rows = parse_and_write(decompr_raw, decrypted, outcsv)
-    print('Wrote', outcsv, 'rows', len(rows))
-
-    # quick print of found keywords and key offsets
-    data = decrypted
-    for name in (b'Patrick', b'Forest Frontiers', b'Leafy Lake', b'Dynamite Dunes'):
-        pos = data.find(name)
-        print(name.decode(), '->', pos)
+    logger.info('Wrote %s rows %d', outcsv, len(rows))
 
 if __name__ == '__main__':
     main()
