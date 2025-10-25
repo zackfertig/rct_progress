@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=42","wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rct_progress"
+version = "0.0.1"
+description = "Tools for decrypting and parsing RCT CSS0.DAT progress/scenario archives"
+authors = [
+  { name = "zackfertig", email = "zack@example.com" }
+]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+keywords = ["rollercoaster-tycoon", "rct", "css0", "rle", "decompress", "decrypt"]
+
+[project.urls]
+[project.scripts]
+# console script mapping: rct-progress -> rct_progress.cli:main
+rct-progress = "rct_progress.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}

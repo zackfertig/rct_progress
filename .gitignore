@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.build/
+dist/
+*.egg-info
+.idea/
+.vscode/
+CSS0.decompressed.raw.bin
+CSS0.decrypted.bin
+css0_parsed_new.csv
+debug.log
