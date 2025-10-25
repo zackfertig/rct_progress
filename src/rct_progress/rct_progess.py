@@ -7,6 +7,7 @@ def read_rct_progress(fname):
     print(f"Read {len(bfilecontents)} bytes from {fname}")
     data = bfilecontents[:-4]
     data = bytearray(data)
+    
     checksum = struct.unpack("L", filecontents[-4:])[0]
     
     isvalid, calculated_checksum = verify_checksum(data, checksum)
@@ -21,27 +22,29 @@ def read_rct_progress(fname):
     
     print(f"Decoded into {len(data)} bytes")
     with open(fname + ".dec", 'wb') as f:
-        f.write(struct.pack("B"*len(data), *data))
+        f.write(data)
     return data
 
 def decrypt_data(data):
-    #finalbytes = bytearray.fromhex('39393939')
-    #print(f"Data length modulo 4: {len(data)%4}")
-    datac = data
-    if len(datac)%4 != 0:
-        datac.extend(bytearray(4 - (len(datac)%4)))
-    #print(f"Data length after adding final bytes: {len(datac)}")
-    #print(f"Data length modulo 4: {len(datac)%4}")
-    dworddata = memoryview(datac).cast('I')
+    # data is a bytearray or bytes-like; work on a copy or return a new bytearray
+    orig_len = len(data)
+    padded = bytearray(data)
+    if orig_len % 4 != 0:
+        padded.extend(b'\x00' * (4 - (orig_len % 4)))
+
+    offset = 0x39393939
     decrypted = bytearray()
-    for i in range(len(dworddata)):
-        #decrypted_dword = rotate_right(dworddata[i]+0x39393939, 5, 32)
-        decrypted_dword = rotate_left(dworddata[i], 5, 32)
-        decrypted_dword = (decrypted_dword-0x39393939) % 2**32
-        decrypted.extend(struct.pack("L", decrypted_dword))
-    # Trim any added bytes
-    data[:] = decrypted[:len(data)]
-    return data
+    for i in range(0, len(padded), 4):
+        # read 4 bytes as unsigned 32-bit little-endian (padded ensures 4 bytes available)
+        dword = int.from_bytes(padded[i:i+4], byteorder='little', signed=False) & 0xFFFFFFFF
+
+        # rotate within 32 bits and subtract offset, always keeping 32-bit unsigned
+        dword = rotate_left(dword, 5, 32) & 0xFFFFFFFF
+        dword = (dword - offset) & 0xFFFFFFFF
+        decrypted.extend(dword.to_bytes(4, byteorder='little', signed=False))
+
+    # return only the original number of bytes (drop padding)
+    return decrypted[:orig_len]
 
 
 def rotate_left(value, shift, size):
@@ -67,37 +70,23 @@ def rle_decode(data):
     decoded = bytearray()
     i = 0
     while i < len(data):
-        byte = data[i]
-        if byte & 0x80:  # High bit set indicates a run
-            run_length = (byte & 0x7F) + 1
-            i += 1
+        ctrl = data[i]
+        i += 1
+        if ctrl & 0x80:  # High bit set indicates a run
+            run_length = -(ctrl & 0x7F) % 128 + 1
+            if i >= len(data):
+                pass
+                #raise ValueError("RLE data ends unexpectedly while reading run value")
             run_value = data[i]
             decoded.extend([run_value] * run_length)
+            i += 1
         else:
-            literal_length = (byte & 0x7F) + 1
-            i += 1
+            literal_length = (ctrl & 0x7F) % 128 + 1
+            if i + literal_length > len(data):
+                pass
+                #raise ValueError("RLE data ends unexpectedly while reading literal bytes")
             decoded.extend(data[i:i+literal_length])
-            i += literal_length - 1
-        i += 1
-    #decodeddata = struct.pack("B"*len(decoded), decoded)
-    return decoded
-
-#def rle_decode(data):
-    decoded = bytearray()
-    i = 0
-    while i < len(data):
-        byte = data[i]
-        if byte & 0x80:  # High bit set indicates a run
-            run_length = (byte & 0x7F) + 1
-            i += 1
-            run_value = data[i]
-            decoded.extend([run_value] * (run_length))
-        else:
-            literal_length = (byte & 0x7F) + 1
-            i += 1
-            decoded.extend(data[i:i+literal_length])
-            i += literal_length - 1
-        i += 1
+            i += literal_length
     #decodeddata = struct.pack("B"*len(decoded), decoded)
     return decoded
 
@@ -105,6 +94,9 @@ def rle_decode(data):
 def main():
     print("Hello from rct_progress!")
     fname = "CSS0.DAT"
+    testbytes = bytearray.fromhex("00 47 FF 6F 05 64 20 6A 6F 62 21")
+    result = rle_decode(testbytes)
+    print(f"Test bytes: {result}")
     data = read_rct_progress(fname)
 
 if __name__ == "__main__":
