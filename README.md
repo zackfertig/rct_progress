@@ -7,9 +7,7 @@ Landscapes and Added Attractions installed
 
 Features
 --------
-- Decompress RCT RLE-compressed data
-- Reverse the simple DWord-level obfuscation used in the archive
-- Parse scenario tables and write a CSV of filenames, scenario names and metadata
+- Decrypts the `CSS0.DAT` from RollerCoaster Tycoon 1 so that the player's progress can be transferred to OpenRCT2
 
 Quick start
 -----------
