@@ -22,10 +22,19 @@ def main(argv: Optional[list] = None) -> int:
     Returns:
         An exit code (0 for success).
     """
-    parser = argparse.ArgumentParser(description='Decompress and decrypt a CSS0.DAT file and parse it to CSV.')
-    parser.add_argument('--input', '-i', default='CSS0.DAT', help='Path to input CSS0.DAT file (default: CSS0.DAT)')
-    parser.add_argument('--out', '-o', default='css0_parsed.csv', help='Output CSV filename (default: css0_parsed.csv)')
-    parser.add_argument('--verbose', '-v', action='store_true', help='Write intermediate decompressed/decrypted binary files and print extra info')
+    parser = argparse.ArgumentParser(
+        description='Decompress and decrypt a CSS0.DAT file and parse it to CSV.'
+    )
+    parser.add_argument('--input', '-i', default='CSS0.DAT',
+                        help='Path to input CSS0.DAT file (default: CSS0.DAT)')
+    parser.add_argument('--out', '-o', dest='out', default='css0_parsed.csv',
+                        help='Output CSV file (default: css0_parsed.csv)')
+    # Provide clearer alias; keep --out working
+    parser.add_argument('--output', dest='out', help=argparse.SUPPRESS)
+    parser.add_argument('--verbose', '-v', action='store_true',
+                        help='Print extra logs')
+    parser.add_argument('--keep-intermediate', '-k', action='store_true',
+                        help='Keep intermediate decompressed/decrypted binaries next to the input file')
     args = parser.parse_args(argv)
 
     # If a relative input path is provided, assume it's relative to the
@@ -40,7 +49,11 @@ def main(argv: Optional[list] = None) -> int:
     out_csv = Path(args.out) if Path(args.out).is_absolute() else Path.cwd() / args.out
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format='%(levelname)s: %(message)s')
-    core.process_file(inp_path, out_csv, verbose=args.verbose)
+    try:
+        core.process_file(inp_path, out_csv, verbose=args.verbose, keep_intermediate=args.keep_intermediate)
+    except Exception as e:
+        logging.error(str(e))
+        return 1
     return 0
 
 

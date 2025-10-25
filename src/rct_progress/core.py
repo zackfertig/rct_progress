@@ -10,10 +10,36 @@ from pathlib import Path
 import struct
 import csv
 import logging
-from typing import List, Tuple
+from typing import List, Tuple, TypedDict
 
 MAGIC_ADD = 0x39393939
 MASK32 = 0xFFFFFFFF
+
+# CSS0 layout constants for clarity
+FILE_NAME_TABLE_OFFSET = 0x0000
+FILE_NAME_ENTRY_SIZE = 16
+
+SCENARIO_NAME_TABLE_OFFSET = 0x0800
+SCENARIO_NAME_ENTRY_SIZE = 64
+
+COMPANY_VALUE_TABLE_OFFSET = 0x2800
+
+WINNER_TABLE_OFFSET = 0x2A00
+WINNER_ENTRY_SIZE = 32
+
+MAX_ENTRIES = 128
+CHECKSUM_FINAL_ADD = 120001
+
+# struct format constants
+DWORD_LE = '<I'
+
+
+class Row(TypedDict):
+    index: int
+    filename: str
+    name: str
+    company_value: int | None
+    winner: str
 
 
 def rotl32(x: int, n: int) -> int:
@@ -56,8 +82,13 @@ def rle_decompress(data: bytes) -> bytes:
         if sb >= 0:
             # sb >= 0 -> copy next (sb + 1) literal bytes
             cnt = sb + 1
-            out.extend(body[i:i+cnt])
-            i += cnt
+            # Clamp to available bytes to avoid overrun on malformed input
+            end = i + cnt
+            if end > len(body):
+                out.extend(body[i:])
+                break
+            out.extend(body[i:end])
+            i = end
         else:
             # sb < 0 -> repeat next byte (-sb + 1) times
             cnt = 1 - sb
@@ -81,17 +112,16 @@ def decrypt_dwords_le(data: bytes) -> bytes:
     Returns:
         Decrypted bytes with the same length as the input.
     """
-    fmt = '<I'
     out = bytearray()
     for i in range(0, len(data), 4):
         chunk = data[i:i+4]
         if len(chunk) < 4:
             out.extend(chunk)
             break
-        (w,) = struct.unpack(fmt, chunk)
+        (w,) = struct.unpack(DWORD_LE, chunk)
         tmp = rotl32(w, 5)
         plain = (tmp - MAGIC_ADD) & MASK32
-        out.extend(struct.pack(fmt, plain))
+        out.extend(struct.pack(DWORD_LE, plain))
     return bytes(out)
 
 
@@ -111,10 +141,11 @@ def verify_checksum(data: bytes, expected_checksum: int) -> Tuple[bool, int]:
     """
     total = 0
     for byte in data:
-        val = (total + byte) % 256
-        total = ((total & 0xFFFFFF00) | (val & 0x000000FF)) % (1 << 32)
-        total = rotl32(total, 3) % (1 << 32)
-    calculated_checksum = ((total & 0xFFFFFFFF) + 120001) % (1 << 32)
+        # Add to low byte, keep upper bytes untouched, maintain 32-bit state
+        low = ((total & 0xFF) + byte) & 0xFF
+        total = ((total & 0xFFFFFF00) | low) & MASK32
+        total = rotl32(total, 3)
+    calculated_checksum = (total + CHECKSUM_FINAL_ADD) & MASK32
     return (calculated_checksum == expected_checksum, calculated_checksum)
 
 
@@ -157,12 +188,12 @@ def read_dwords_le(data: bytes, offset: int, count: int) -> List[int]:
         off = offset + i*4
         if off+4 > len(data):
             break
-        items.append(struct.unpack_from('<I', data, off)[0])
+        items.append(struct.unpack_from(DWORD_LE, data, off)[0])
     return items
 
 
-def parse_and_write(decomp: bytes, decrypted: bytes, out_csv: Path) -> List[dict]:
-    """Parse tables from the decrypted data and write to CSV.
+def parse_tables(decrypted: bytes) -> List[Row]:
+    """Parse tables from the decrypted data.
 
     The parser reads several tables at fixed offsets found by
     inspecting the game's data layout:
@@ -175,50 +206,67 @@ def parse_and_write(decomp: bytes, decrypted: bytes, out_csv: Path) -> List[dict
     available buffer size so it won't raise on truncated inputs.
 
     Args:
-        decomp: the decompressed byte stream (used only for diagnostics)
         decrypted: the decrypted byte stream to parse tables from
-        out_csv: path to write the resulting CSV
 
     Returns:
-        List of row dictionaries that were written to CSV.
+        List of parsed row dictionaries.
     """
     total = len(decrypted)
-    max_files = max(0, (total - 0x0000) // 16)
-    max_files = min(max_files, 128)
-    files = read_fixed_strings(decrypted, 0x0000, max_files, 16)
+    # Filenames
+    max_files = max(0, (total - FILE_NAME_TABLE_OFFSET) // FILE_NAME_ENTRY_SIZE)
+    max_files = min(max_files, MAX_ENTRIES)
+    files = read_fixed_strings(decrypted, FILE_NAME_TABLE_OFFSET, max_files, FILE_NAME_ENTRY_SIZE)
+    # Scenario names
     max_names = 0
-    if len(decrypted) > 0x0800:
-        max_names = min(128, (len(decrypted) - 0x0800) // 64)
-    names = read_fixed_strings(decrypted, 0x0800, max_names, 64)
-    comps = []
-    if len(decrypted) > 0x2800:
-        max_comp = min(128, (len(decrypted) - 0x2800) // 4)
-        comps = read_dwords_le(decrypted, 0x2800, max_comp)
-    wins = []
-    if len(decrypted) > 0x2A00:
-        max_w = min(128, (len(decrypted) - 0x2A00) // 32)
-        wins = read_fixed_strings(decrypted, 0x2A00, max_w, 32)
+    if total > SCENARIO_NAME_TABLE_OFFSET:
+        max_names = min(MAX_ENTRIES, (total - SCENARIO_NAME_TABLE_OFFSET) // SCENARIO_NAME_ENTRY_SIZE)
+    names = read_fixed_strings(decrypted, SCENARIO_NAME_TABLE_OFFSET, max_names, SCENARIO_NAME_ENTRY_SIZE)
+    # Company values
+    comps: List[int] = []
+    if total > COMPANY_VALUE_TABLE_OFFSET:
+        max_comp = min(MAX_ENTRIES, (total - COMPANY_VALUE_TABLE_OFFSET) // 4)
+        comps = read_dwords_le(decrypted, COMPANY_VALUE_TABLE_OFFSET, max_comp)
+    # Winners
+    wins: List[str] = []
+    if total > WINNER_TABLE_OFFSET:
+        max_w = min(MAX_ENTRIES, (total - WINNER_TABLE_OFFSET) // WINNER_ENTRY_SIZE)
+        wins = read_fixed_strings(decrypted, WINNER_TABLE_OFFSET, max_w, WINNER_ENTRY_SIZE)
 
-    rows: List[dict] = []
+    rows: List[Row] = []
     count = max(len(files), len(names), len(comps), len(wins))
     for i in range(count):
         rows.append({
             'index': i,
             'filename': files[i] if i < len(files) else '',
             'name': names[i] if i < len(names) else '',
-            'company_value': comps[i] if i < len(comps) else '',
+            'company_value': comps[i] if i < len(comps) else None,
             'winner': wins[i] if i < len(wins) else '',
         })
 
+    return rows
+
+
+def write_csv(rows: List[Row], out_csv: Path) -> None:
+    """Write parsed rows to CSV at the given path."""
     with out_csv.open('w', newline='', encoding='utf8') as fh:
         writer = csv.DictWriter(fh, fieldnames=['index','filename','name','company_value','winner'])
         writer.writeheader()
         for r in rows:
-            writer.writerow(r)
+            row = dict(r)
+            # Render None as empty string for CSV output
+            if row.get('company_value') is None:
+                row['company_value'] = ''
+            writer.writerow(row)
+
+
+def parse_and_write(decrypted: bytes, out_csv: Path) -> List[Row]:
+    """Convenience wrapper: parse and write to CSV, returning rows."""
+    rows = parse_tables(decrypted)
+    write_csv(rows, out_csv)
     return rows
 
 
-def process_file(input_path: Path, out_csv: Path, verbose: bool = False) -> List[dict]:
+def process_file(input_path: Path, out_csv: Path, verbose: bool = False, *, keep_intermediate: bool = False) -> List[Row]:
     """Process a `CSS0.DAT` file end-to-end.
 
     Steps performed:
@@ -230,7 +278,8 @@ def process_file(input_path: Path, out_csv: Path, verbose: bool = False) -> List
     Args:
         input_path: Path to the compressed CSS0.DAT file.
         out_csv: Path to the CSV file to write.
-        verbose: When True, write intermediate binary files next to the input.
+    verbose: When True, print more detailed logs.
+    keep_intermediate: When True, write intermediate binary files next to the input.
 
     Returns:
         The list of parsed rows written to CSV.
@@ -243,16 +292,23 @@ def process_file(input_path: Path, out_csv: Path, verbose: bool = False) -> List
     compressed_body = raw[:-4]
     ok, calc = verify_checksum(compressed_body, expected_checksum)
     if not ok:
-        raise ValueError(f'Checksum mismatch: expected {expected_checksum}, calculated {calc}')
+        raise ValueError(
+            f'Checksum mismatch: expected {expected_checksum} (0x{expected_checksum:08X}), '
+            f'calculated {calc} (0x{calc:08X})'
+        )
     if verbose:
         logger.info('Checksum valid: %d', expected_checksum)
     decompr_raw = rle_decompress(raw)
-    if verbose:
-        (input_path.parent / 'CSS0.decompressed.raw.bin').write_bytes(decompr_raw)
-        logger.info('Wrote %s size %d', input_path.parent / 'CSS0.decompressed.raw.bin', len(decompr_raw))
+    if keep_intermediate:
+        decomp_path = input_path.parent / 'CSS0.decompressed.raw.bin'
+        decomp_path.write_bytes(decompr_raw)
+        logger.debug('Wrote %s size %d', decomp_path, len(decompr_raw))
     decrypted = decrypt_dwords_le(decompr_raw)
-    if verbose:
-        (input_path.parent / 'CSS0.decrypted.bin').write_bytes(decrypted)
-        logger.info('Wrote %s size %d', input_path.parent / 'CSS0.decrypted.bin', len(decrypted))
-    rows = parse_and_write(decompr_raw, decrypted, out_csv)
+    if keep_intermediate:
+        dec_path = input_path.parent / 'CSS0.decrypted.bin'
+        dec_path.write_bytes(decrypted)
+        logger.debug('Wrote %s size %d', dec_path, len(decrypted))
+    rows = parse_and_write(decrypted, out_csv)
+    # Always emit a single success INFO line for the main artifact
+    logger.info('Wrote CSV %s (%d rows)', out_csv, len(rows))
     return rows
