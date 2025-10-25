@@ -72,6 +72,21 @@ def read_dwords_le(data: bytes, offset: int, count: int):
         items.append(struct.unpack_from('<I', data, off)[0])
     return items
 
+
+def verify_checksum(data: bytes, expected_checksum: int):
+    """Verify checksum of the compressed data (data should be the bytes excluding the trailing 4-byte checksum).
+
+    Returns (is_valid, calculated_checksum).
+    """
+    total = 0
+    for byte in data:
+        val = (total + byte) % 256
+        total = ((total & 0xFFFFFF00) | (val & 0x000000FF)) % (1 << 32)
+        # rotate left 3
+        total = rotl32(total, 3) % (1 << 32)
+    calculated_checksum = ((total & 0xFFFFFFFF) + 120001) % (1 << 32)
+    return (calculated_checksum == expected_checksum, calculated_checksum)
+
 def parse_and_write(decomp: bytes, decrypted: bytes, out_csv: Path):
     # parse available tables but don't assume full length; compute counts by available bytes
     total = len(decrypted)
@@ -136,6 +151,19 @@ def main():
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format='%(levelname)s: %(message)s')
     logger = logging.getLogger(__name__)
     raw = inp_path.read_bytes()
+    # raw contains compressed data + trailing 4-byte checksum (little-endian)
+    if len(raw) < 4:
+        logger.error('Input file too small to contain checksum')
+        raise ValueError('Input file too small to contain checksum')
+    expected_checksum = struct.unpack_from('<I', raw, len(raw)-4)[0]
+    compressed_body = raw[:-4]
+    ok, calc = verify_checksum(compressed_body, expected_checksum)
+    if not ok:
+        logger.error('Checksum mismatch: expected %d, calculated %d', expected_checksum, calc)
+        raise ValueError(f'Checksum mismatch: expected {expected_checksum}, calculated {calc}')
+    else:
+        logger.info('Checksum valid: %d', expected_checksum)
+
     # decompress raw (omit last 4 bytes of raw as checksum)
     decompr_raw = rle_decompress(raw)
     # write decompressed / decrypted outputs next to input file
