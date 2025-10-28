@@ -1,3 +1,61 @@
+# Import RCT1 progress into OpenRCT2
+
+This repo provides a script to convert an RCT1 progress CSV into OpenRCT2's highscores.dat (v2), so Classic/AA/LL scenarios (e.g., Forest Frontiers) show as completed.
+
+Tested with OpenRCT2 v0.4.27 on Windows.
+
+## Prerequisites
+- Python 3.8+ on Windows
+- An RCT1 CSV with columns: `filename`, `name` (optional), `company_value`, `winner`
+
+## Generate highscores.dat (recommended)
+OpenRCT2 stores highscores in a binary file with the following layout (version 2):
+- uint32 version = 2
+- uint32 count
+- For each entry:
+  - cstring fileName (scenario file name only, e.g., `sc0.sc4`)
+  - cstring name (player name)
+  - int64 company_value (value ×10)
+  - int64 timestamp (use INT64_MIN for legacy/unknown)
+
+### Usage
+```powershell
+# From this repo folder
+py .\build_highscores.py -i .\outdir\css0_parsed_split.csv -o .\outdir\highscores.dat
+```
+
+Or convert directly from CSS0.DAT without creating a CSV first:
+
+```powershell
+py .\build_highscores.py --css0 "[...]\RollerCoaster Tycoon\\DATA\\CSS0.DAT" -o .\outdir\highscores.dat
+```
+
+Then install into OpenRCT2:
+```powershell
+Copy-Item .\outdir\highscores.dat "$env:USERPROFILE\Documents\OpenRCT2\highscores.dat" -Force
+```
+Restart OpenRCT2.
+
+### Notes
+- Matching uses only the scenario file name (e.g., `sc0.sc4`). The scenario must be present and indexed in OpenRCT2.
+- Scaling: `company_value` is treated as whole currency units and stored ×10 internally.
+- If you also have legacy `scores.dat`, highscores.dat takes precedence.
+
+### Troubleshooting (AA scenarios)
+Symptoms
+- AA scenarios appear completed but not selectable, or some appear twice (e.g., Funtopia).
+
+Cause
+- Duplicate SC4 files (e.g., `Old_SC40.SC4` … `Old_SC69.SC4`) in scanned folders.
+
+Fix
+1) Close OpenRCT2.
+2) Remove or archive duplicates so only canonical files remain (e.g., `sc40.sc4` … `sc69.sc4`).
+3) (Optional) Delete `%USERPROFILE%\Documents\OpenRCT2\scenarios.idx` to force a rebuild.
+4) Restart OpenRCT2.
+
+## Notes on legacy RCT2 scores.dat
+If you specifically need to generate an RCT2-style scores.dat for legacy import, prefer using OpenRCT2's native highscores.dat for RCT1 progress. The legacy route is not required and is generally discouraged for SC4.
 rct_progress
 ============
 

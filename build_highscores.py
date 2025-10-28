@@ -23,6 +23,9 @@
 import csv
 import struct
 from pathlib import Path
+import argparse
+import sys
+import tempfile
 
 VERSION = 2
 INT64_MIN = -9223372036854775808
@@ -48,11 +51,7 @@ def to_money64(company_value_field: str | int | float | None) -> int:
     return int(v * 10)
 
 
-def build(csv_path: Path, out_path: Path):
-    with open(csv_path, newline='', encoding='utf-8-sig') as fh:
-        rows = list(csv.DictReader(fh))
-
-    # Only write entries that have a filename and a non-empty winner
+def build_from_rows(rows: list[dict], out_path: Path):
     filtered = [r for r in rows if (r.get('filename') or '').strip() and (r.get('winner') or '').strip()]
 
     with open(out_path, 'wb') as f:
@@ -74,7 +73,57 @@ def build(csv_path: Path, out_path: Path):
     print(f"Entries: {len(filtered)}")
 
 
+def build(csv_path: Path, out_path: Path):
+    with open(csv_path, newline='', encoding='utf-8-sig') as fh:
+        rows = list(csv.DictReader(fh))
+    build_from_rows(rows, out_path)
+
+
+def rows_from_css0(css0_path: Path) -> list[dict]:
+    """Parse CSS0.DAT and return rows compatible with build_from_rows.
+
+    Tries to import rct_progress.core.process_file from this repo. If the
+    package is not importable, the function adjusts sys.path to include ./src.
+    """
+    try:
+        from rct_progress.core import process_file  # type: ignore
+    except Exception:
+        # Add ./src to sys.path when running directly from repo root
+        repo_root = Path(__file__).resolve().parent
+        src_path = (repo_root / 'src').resolve()
+        if str(src_path) not in sys.path:
+            sys.path.insert(0, str(src_path))
+        from rct_progress.core import process_file  # type: ignore
+
+    # Write CSV to a temp file but primarily use returned rows
+    with tempfile.TemporaryDirectory() as td:
+        tmp_csv = Path(td) / 'css0_parsed.csv'
+        rows = process_file(css0_path, tmp_csv, verbose=False, keep_intermediate=False)
+    # Ensure dict keys conform: filename, name, company_value, winner
+    normalized = []
+    for r in rows:
+        normalized.append({
+            'filename': r.get('filename', ''),
+            'name': r.get('name', ''),
+            'company_value': r.get('company_value', 0),
+            'winner': r.get('winner', ''),
+        })
+    return normalized
+
+
 if __name__ == '__main__':
-    csv_in = Path(r'c:\Users\Krabs\repos\rct_progress\outdir\css0_parsed_split.csv')
-    out = csv_in.with_name('highscores.dat')
-    build(csv_in, out)
+    parser = argparse.ArgumentParser(description='Build OpenRCT2 highscores.dat (v2) from RCT1 CSV or CSS0.DAT')
+    src = parser.add_mutually_exclusive_group(required=True)
+    src.add_argument('-i', '--input', help='Path to input CSV (filename, name, company_value, winner)')
+    src.add_argument('--css0', help='Path to CSS0.DAT to parse directly')
+    parser.add_argument('-o', '--output', required=True, help='Path to output highscores.dat')
+    args = parser.parse_args()
+
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if args.css0:
+        rows = rows_from_css0(Path(args.css0))
+        build_from_rows(rows, out)
+    else:
+        csv_in = Path(args.input)
+        build(csv_in, out)
