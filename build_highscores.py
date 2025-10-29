@@ -21,12 +21,14 @@
 # money64/datetime64 are 8-byte little-endian signed integers.
 
 import csv
+import os
+import platform
 import struct
 from pathlib import Path
 import argparse
 import sys
 import tempfile
-from typing import BinaryIO, Dict, Tuple
+from typing import BinaryIO, Dict, Tuple, Optional
 
 VERSION = 2
 INT64_MIN = -9223372036854775808
@@ -182,6 +184,89 @@ def write_from_map(entries: Dict[str, Tuple[str, str, int, int]], out_path: Path
 
 
 if __name__ == '__main__':
+    def default_openrct2_dir() -> Path:
+        sysname = platform.system()
+        home = Path.home()
+        if sysname == 'Windows':
+            docs = os.environ.get('USERPROFILE')
+            if docs:
+                return Path(docs) / 'Documents' / 'OpenRCT2'
+            return home / 'Documents' / 'OpenRCT2'
+        if sysname == 'Darwin':
+            return home / 'Library' / 'Application Support' / 'OpenRCT2'
+        # Linux and others
+        return home / '.config' / 'OpenRCT2'
+
+    def run_build(css0: Optional[Path], csv_in: Optional[Path], out: Path, merge: bool):
+        out.parent.mkdir(parents=True, exist_ok=True)
+        existing_map: Dict[str, Tuple[str, str, int, int]] = {}
+        if merge and out.exists():
+            existing_map = load_highscores(out)
+
+        if css0 is not None:
+            rows = rows_from_css0(css0)
+        else:
+            assert csv_in is not None
+            with open(csv_in, newline='', encoding='utf-8-sig') as fh:
+                rows = list(csv.DictReader(fh))
+
+        new_map = best_map_from_rows(rows)
+        if merge:
+            merged = dict(existing_map)
+            for k, v in new_map.items():
+                prev = merged.get(k)
+                if prev is None or v[2] > prev[2]:
+                    merged[k] = v
+            write_from_map(merged, out)
+            print(f"highscores.dat merged and written: {out}")
+            print(f"Entries: {len(merged)}")
+        else:
+            write_from_map(new_map, out)
+            print(f"highscores.dat written: {out}")
+            print(f"Entries: {len(new_map)}")
+
+    # Drag-and-drop friendly handling:
+    #  - If invoked with one positional arg: treat it as CSS0.DAT and write highscores.dat to the default OpenRCT2 dir (no merge).
+    #  - If invoked with two positional args: if one looks like CSS0.DAT and the other looks like highscores.dat, perform a merge and write to the highscores path.
+    #  - If no positional args: fall back to argparse (or show a simple chooser when frozen).
+    argv = sys.argv[1:]
+    dnd_args = [a for a in argv if not a.startswith('-')]
+
+    def looks_like_css0(p: Path) -> bool:
+        return p.name.lower() == 'css0.dat'
+
+    def looks_like_highscores(p: Path) -> bool:
+        return p.name.lower() == 'highscores.dat'
+
+    if len(dnd_args) == 1 and all(a.startswith('-') is False for a in dnd_args):
+        # Single file dropped: assume CSS0.DAT -> write to default highscores path
+        css0p = Path(dnd_args[0]).resolve()
+        outp = default_openrct2_dir() / 'highscores.dat'
+        run_build(css0=css0p, csv_in=None, out=outp, merge=False)
+        sys.exit(0)
+
+    if len(dnd_args) == 2:
+        p1 = Path(dnd_args[0]).resolve()
+        p2 = Path(dnd_args[1]).resolve()
+        css0p = None
+        highp = None
+        if looks_like_css0(p1):
+            css0p = p1
+        if looks_like_css0(p2):
+            css0p = css0p or p2
+            highp = p1 if highp is None and p1 != css0p else highp
+        if looks_like_highscores(p1):
+            highp = p1
+        if looks_like_highscores(p2):
+            highp = highp or p2
+        # If highscores wasn't explicitly provided, default to platform dir
+        if css0p is not None:
+            if highp is None:
+                highp = default_openrct2_dir() / 'highscores.dat'
+            run_build(css0=css0p, csv_in=None, out=highp, merge=True)
+            sys.exit(0)
+
+    # No drag-and-drop positional case; use standard argparse
     parser = argparse.ArgumentParser(description='Build OpenRCT2 highscores.dat (v2) from RCT1 CSV or CSS0.DAT')
     src = parser.add_mutually_exclusive_group(required=True)
     src.add_argument('-i', '--input', help='Path to input CSV (filename, name, company_value, winner)')
@@ -191,34 +276,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     out = Path(args.output)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    # Load existing map if merge
-    existing_map: Dict[str, Tuple[str, str, int, int]] = {}
-    if args.merge and out.exists():
-        existing_map = load_highscores(out)
-
-    # Build new map from input
-    if args.css0:
-        rows = rows_from_css0(Path(args.css0))
-    else:
-        csv_in = Path(args.input)
-        with open(csv_in, newline='', encoding='utf-8-sig') as fh:
-            rows = list(csv.DictReader(fh))
-
-    new_map = best_map_from_rows(rows)
-
-    if args.merge:
-        # Merge: prefer higher company value per filename
-        merged = dict(existing_map)
-        for k, v in new_map.items():
-            prev = merged.get(k)
-            if prev is None or v[2] > prev[2]:
-                merged[k] = v
-        write_from_map(merged, out)
-        print(f"highscores.dat merged and written: {out}")
-        print(f"Entries: {len(merged)}")
-    else:
-        # Overwrite with only new entries
-        write_from_map(new_map, out)
-        print(f"highscores.dat written: {out}")
-        print(f"Entries: {len(new_map)}")
+    css0p = Path(args.css0).resolve() if args.css0 else None
+    csv_in = Path(args.input).resolve() if args.input else None
+    run_build(css0=css0p, csv_in=csv_in, out=out, merge=args.merge)

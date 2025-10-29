@@ -22,6 +22,12 @@ Prebuilt binaries (no Python required)
 	- Linux: `./rct-highscores --css0 "/path/.../DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge`
 	- If macOS blocks execution, remove quarantine and make it executable: `xattr -dr com.apple.quarantine ./rct-highscores; chmod +x ./rct-highscores`
 	- On Linux, mark executable if needed: `chmod +x ./rct-highscores`
+ - Drag-and-drop (binaries only):
+	 - Drop a single `CSS0.DAT` onto `rct-highscores` to generate `highscores.dat` into your default OpenRCT2 user folder:
+		 - Windows: `%USERPROFILE%\Documents\OpenRCT2\highscores.dat`
+		 - macOS: `~/Library/Application Support/OpenRCT2/highscores.dat`
+		 - Linux: `~/.config/OpenRCT2/highscores.dat`
+	 - Drop both `CSS0.DAT` and an existing `highscores.dat` onto `rct-highscores` to merge and write to the given highscores path.
 
 Usage (from this repo folder)
 - From CSV (Windows PowerShell):
