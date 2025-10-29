@@ -24,6 +24,7 @@ keywords = ["rollercoaster-tycoon", "rct", "css0", "rle", "decompress", "decrypt
 [project.scripts]
 # console script mapping: rct-progress -> rct_progress.cli:main
 rct-progress = "rct_progress.cli:main"
+rct-highscores = "rct_progress.highscores:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

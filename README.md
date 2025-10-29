@@ -74,54 +74,35 @@ OS‑native packages details
   - Optional: run once to integrate into your desktop menu; after integration you can drag files onto the launcher/icon if supported by your environment.
   - As with other binaries, a single `CSS0.DAT` generates to the default OpenRCT2 folder; adding a `highscores.dat` performs an in‑place merge.
 
-Usage (from this repo folder)
-- From CSV (Windows PowerShell):
-```powershell
-py .\build_highscores.py -i .\outdir\css0_parsed_split.csv -o .\outdir\highscores.dat
-
-# Merge into an existing highscores.dat instead of overwriting
-# IMPORTANT: Back up your existing highscores.dat before merging!
-# Example:
-# $dst = Join-Path $env:USERPROFILE 'Documents\OpenRCT2\highscores.dat'
-# if (Test-Path $dst) { $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'; Copy-Item $dst "$dst.bak-$stamp" -Force }
-py .\build_highscores.py -i .\outdir\css0_parsed_split.csv -o .\outdir\highscores.dat --merge
-```
-
-- From CSV (macOS/Linux bash):
+Usage
+- Preferred (after installing the package locally):
 ```bash
-python3 ./build_highscores.py -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat
-
-# Merge into an existing highscores.dat instead of overwriting
-# IMPORTANT: Back up your existing highscores.dat before merging!
-# macOS:   dst="$HOME/Library/Application Support/OpenRCT2/highscores.dat"
-# Linux:   dst="$HOME/.config/OpenRCT2/highscores.dat"
-# Backup:  [ -f "$dst" ] && cp -p "$dst" "$dst.bak-$(date +%Y%m%d-%H%M%S)"
-python3 ./build_highscores.py -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat --merge
+rct-highscores --css0 "/path/to/.../CSS0.DAT" -o ./outdir/highscores.dat --merge
+# or from CSV
+rct-highscores -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat
 ```
 
-- Directly from CSS0.DAT (no CSV needed, Windows PowerShell):
-```powershell
-py .\build_highscores.py --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat
+In-place (from this repo folder)
+Usage examples (PowerShell/Bash)
+ Direct from CSS0.DAT (recommended):
+	- Windows PowerShell:
+		```powershell
+		rct-highscores --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat --merge
+		```
+	- macOS/Linux:
+		```bash
+		rct-highscores --css0 "/path/to/RollerCoaster Tycoon/DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge
+		```
 
-# Merge into an existing highscores.dat instead of overwriting
-# IMPORTANT: Back up your existing highscores.dat before merging!
-# Example:
-# $dst = Join-Path $env:USERPROFILE 'Documents\OpenRCT2\highscores.dat'
-# if (Test-Path $dst) { $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'; Copy-Item $dst "$dst.bak-$stamp" -Force }
-py .\build_highscores.py --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat --merge
-```
-
-- Directly from CSS0.DAT (no CSV needed, macOS/Linux bash):
-```bash
-python3 ./build_highscores.py --css0 "/path/to/RollerCoaster Tycoon/DATA/CSS0.DAT" -o ./outdir/highscores.dat
-
-# Merge into an existing highscores.dat instead of overwriting
-# IMPORTANT: Back up your existing highscores.dat before merging!
-# macOS:   dst="$HOME/Library/Application Support/OpenRCT2/highscores.dat"
-# Linux:   dst="$HOME/.config/OpenRCT2/highscores.dat"
-# Backup:  [ -f "$dst" ] && cp -p "$dst" "$dst.bak-$(date +%Y%m%d-%H%M%S)"
-python3 ./build_highscores.py --css0 "/path/to/RollerCoaster Tycoon/DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge
-```
+ From CSV:
+	- Windows PowerShell:
+		```powershell
+		rct-highscores -i .\outdir\css0_parsed_split.csv -o .\outdir\highscores.dat --merge
+		```
+	- macOS/Linux:
+		```bash
+		rct-highscores -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat --merge
+		```
 
 Install into OpenRCT2
 - Windows (PowerShell):
@@ -242,13 +223,13 @@ Developer notes
 			- cstring name (player name)
 			- int64 company_value (internal units = display currency × 10)
 			- int64 timestamp (use INT64_MIN for unknown)
-	- Build from CSV (columns: filename, name, company_value, winner):
+	- Build directly (no install) using module:
 		```powershell
-		py .\build_highscores.py -i .\outdir\css0_parsed_split.csv -o .\outdir\highscores.dat
+		python -m rct_progress.highscores --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat
 		```
-	- Build directly from CSS0.DAT (no CSV needed):
+	- Or use the installed console script:
 		```powershell
-		py .\build_highscores.py --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat
+		rct-highscores --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat
 		```
 	- Notes:
 		- CSV path requires company_value in internal units (display ×10).
