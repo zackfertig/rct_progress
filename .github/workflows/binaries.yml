@@ -132,13 +132,36 @@ jobs:
           EOF
           # Minimal placeholder icon if none available
           # (Optional) You can replace this with a project icon later
-          convert -size 256x256 canvas:white -gravity center -pointsize 28 -fill black -annotate +0+0 "RCT" "$APPDIR/usr/share/icons/hicolor/256x256/apps/rct-highscores.png" 2>/dev/null || true
-          # Download appimagetool
+          if command -v convert >/dev/null 2>&1; then
+            convert -size 256x256 canvas:white -gravity center -pointsize 28 -fill black -annotate +0+0 "RCT" "$APPDIR/usr/share/icons/hicolor/256x256/apps/rct-highscores.png"
+          else
+            # No ImageMagick; leave icon empty or provide a simple placeholder later
+            :
+          fi
+          # Try linuxdeploy for dependency bundling; fallback to appimagetool if not available
           mkdir -p artifacts
-          APPIMG_TOOL=appimagetool-x86_64.AppImage
-          curl -L -o "$APPIMG_TOOL" https://github.com/AppImage/AppImageKit/releases/download/13/$APPIMG_TOOL
-          chmod +x "$APPIMG_TOOL"
-          # Build AppImage
+          LINUXDEPLOY=linuxdeploy-x86_64.AppImage
+          curl -fsSL -o "$LINUXDEPLOY" "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/$LINUXDEPLOY" || true
+          chmod +x "$LINUXDEPLOY" 2>/dev/null || true
+          ARCH_RAW="$(uname -m)"
+          case "$ARCH_RAW" in
+            x86_64|amd64) ARCH=x64 ;;
+            aarch64|arm64) ARCH=arm64 ;;
+            *) ARCH="$ARCH_RAW" ;;
+          esac
+          if [ -x "$LINUXDEPLOY" ]; then
+            # linuxdeploy expects .desktop and binary in place
+            ./$LINUXDEPLOY --appdir "$APPDIR" -o appimage -i "$APPDIR/usr/share/icons/hicolor/256x256/apps/rct-highscores.png" -d "$APPDIR/rct-highscores.desktop"
+            mv *.AppImage "artifacts/RCT-Highscores-linux-$ARCH.AppImage"
+          else
+            # Fallback: appimagetool
+            APPIMG_TOOL=appimagetool-x86_64.AppImage
+            curl -fsSL -o "$APPIMG_TOOL" "https://github.com/AppImage/AppImageKit/releases/download/continuous/$APPIMG_TOOL"
+            chmod +x "$APPIMG_TOOL"
+            if [ ! -s "$APPIMG_TOOL" ]; then echo "appimagetool download failed (empty file)" >&2; exit 1; fi
+            if head -c 10 "$APPIMG_TOOL" | grep -q "^<!DOCTYPE"; then echo "appimagetool download failed (HTML)" >&2; exit 1; fi
+            ./$APPIMG_TOOL "$APPDIR" "artifacts/RCT-Highscores-linux-$ARCH.AppImage"
+          fi
           ARCH_RAW="$(uname -m)"
           case "$ARCH_RAW" in
             x86_64|amd64) ARCH=x64 ;;
