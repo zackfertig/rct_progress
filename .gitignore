@@ -10,3 +10,4 @@ CSS0.decompressed.raw.bin
 CSS0.decrypted.bin
 css0_parsed_new.csv
 debug.log
+outdir/*.py
