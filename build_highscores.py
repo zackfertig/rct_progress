@@ -26,7 +26,6 @@ from pathlib import Path
 import argparse
 import sys
 import tempfile
-from typing import BinaryIO
 
 VERSION = 2
 INT64_MIN = -9223372036854775808
@@ -74,31 +73,6 @@ def build_from_rows(rows: list[dict], out_path: Path, *, value_scale: int = 10):
     print(f"Entries: {len(filtered)}")
 
 
-def _read_cstring(fh: BinaryIO) -> str:
-    bs = bytearray()
-    while True:
-        b = fh.read(1)
-        if not b or b == b"\x00":
-            break
-        bs += b
-    return bs.decode('utf-8', errors='replace')
-
-
-def verify_highscores(path: Path, *, limit: int = 10):
-    with open(path, 'rb') as f:
-        ver = int.from_bytes(f.read(4), 'little')
-        cnt = int.from_bytes(f.read(4), 'little')
-        print(f"version={ver} entries={cnt}")
-        n = min(cnt, max(0, limit))
-        for i in range(n):
-            fn = _read_cstring(f)
-            name = _read_cstring(f)
-            val = int.from_bytes(f.read(8), 'little', signed=True)
-            ts = int.from_bytes(f.read(8), 'little', signed=True)
-            # Print value in display currency units by dividing by 10
-            print(f"{i+1:2d}. {fn:20s} {name:20s} value={val/10:.0f}")
-
-
 def build(csv_path: Path, out_path: Path, *, value_scale: int = 10):
     with open(csv_path, newline='', encoding='utf-8-sig') as fh:
         rows = list(csv.DictReader(fh))
@@ -144,8 +118,6 @@ if __name__ == '__main__':
     src.add_argument('--css0', help='Path to CSS0.DAT to parse directly')
     parser.add_argument('-o', '--output', required=True, help='Path to output highscores.dat')
     parser.add_argument('--scale', type=int, default=10, help='CSV company_value scale factor (default: 10). For CSS0.DAT, scaling is not applied (already internal units).')
-    parser.add_argument('--verify', action='store_true', help='After writing, read highscores.dat and print a brief summary')
-    parser.add_argument('--limit', type=int, default=10, help='Limit number of entries to display during --verify (default: 10)')
     args = parser.parse_args()
 
     out = Path(args.output)
@@ -157,6 +129,3 @@ if __name__ == '__main__':
     else:
         csv_in = Path(args.input)
         build(csv_in, out, value_scale=args.scale)
-
-    if args.verify:
-        verify_highscores(out, limit=args.limit)
