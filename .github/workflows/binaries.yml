@@ -33,9 +33,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --upgrade pip
-          python -m pip install "pyinstaller==6.10.0"
-          python - << 'PY'
+          PY="$pythonLocation/bin/python"
+          echo "Using Python: $PY"
+          "$PY" -m pip install --upgrade pip
+          "$PY" -m pip install "pyinstaller==6.10.0"
+          "$PY" - << 'PY'
           import sys
           print('Python:', sys.version)
           try:
@@ -50,13 +52,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pyinstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core build_highscores.py
+          PY="$pythonLocation/bin/python"
+          "$PY" -m pyinstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core build_highscores.py
 
       - name: Build rct-progress (PyInstaller)
         shell: bash
         run: |
           set -euo pipefail
-          python -m pyinstaller --onefile --name rct-progress --paths src src/rct_progress/cli.py
+          PY="$pythonLocation/bin/python"
+          "$PY" -m pyinstaller --onefile --name rct-progress --paths src src/rct_progress/cli.py
 
       - name: Build macOS .app droplet (drag-and-drop)
         if: runner.os == 'macOS'
@@ -64,7 +68,8 @@ jobs:
         run: |
           set -euo pipefail
           # Build a GUI .app that accepts dropped files as argv
-          python -m pyinstaller --windowed --name "RCT Highscores Droplet" --paths src --hidden-import rct_progress.core build_highscores.py
+          PY="$pythonLocation/bin/python"
+          "$PY" -m pyinstaller --windowed --name "RCT Highscores Droplet" --paths src --hidden-import rct_progress.core build_highscores.py
           # Zip the .app bundle for distribution
           mkdir -p artifacts
           ditto -c -k --sequesterRsrc --keepParent "dist/RCT Highscores Droplet.app" "artifacts/RCT-Highscores-Droplet-macos-x64.zip"
