@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 - CI: Stabilized runners — pin PyInstaller, standardize invocation (`python -m pyinstaller`), use bash + strict mode.
 - CI: Linux AppImage step temporarily disabled to unblock release; Linux CLI binary still ships.
 - CI: Matrix `fail-fast: false` so one platform doesn’t cancel others.
+- CI: Artifact filenames now include platform and CPU arch (e.g., `-win-x64`, `-macos-arm64`, `-linux-x64`).
+- CI: Windows step fixed to avoid bash heredoc; use `python -c` in PowerShell when verifying PyInstaller.
 
 ## 0.2.1 — 2025-10-29
 - Added: macOS .app droplet for true drag-and-drop.
