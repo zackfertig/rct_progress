@@ -3,13 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 ## 0.2.2 — 2025-10-29
-- CI: Consolidated release process to a single workflow; removed conflicting `.github/workflows/release.yml`.
-- CI: Auto-generate Release notes from `CHANGELOG.md` with dynamic artifact links.
-- CI: Stabilized runners — pin PyInstaller, standardize invocation (`python -m pyinstaller`), use bash + strict mode.
-- CI: Linux AppImage step temporarily disabled to unblock release; Linux CLI binary still ships.
-- CI: Matrix `fail-fast: false` so one platform doesn’t cancel others.
-- CI: Artifact filenames now include platform and CPU arch (e.g., `-win-x64`, `-macos-arm64`, `-linux-x64`).
-- CI: Windows step fixed to avoid bash heredoc; use `python -c` in PowerShell when verifying PyInstaller.
+- Added: `rct-highscores` console script entry point (`rct_progress.highscores:main`).
+- Changed: highscores builder moved into the package (`src/rct_progress/highscores.py`); removed root `build_highscores.py` script. README updated to recommend `rct-highscores` and `python -m rct_progress.highscores`.
+- Added: Linux AppImage build re-enabled and attached to releases (drag-and-drop via `.desktop` `%F`).
+- CI: Consolidated release process to a single workflow; auto-generates release notes from `CHANGELOG.md` with dynamic artifact links.
+- CI: Stabilized runners — pin PyInstaller, standardize invocation (`python -m pyinstaller`), use bash + strict mode, and `fail-fast: false`.
+- CI: Artifact filenames include platform and CPU arch (e.g., `-win-x64`, `-macos-arm64`, `-linux-x64`).
+- CI: Windows step fixed to avoid bash heredoc; uses `python -c` in PowerShell when verifying PyInstaller.
 
 ## 0.2.1 — 2025-10-29
 - Added: macOS .app droplet for true drag-and-drop.
