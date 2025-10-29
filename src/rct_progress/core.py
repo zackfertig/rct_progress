@@ -32,6 +32,7 @@ CHECKSUM_FINAL_ADD = 120001
 
 # struct format constants
 DWORD_LE = '<I'
+SDWORD_LE = '<i'
 
 
 class Row(TypedDict):
@@ -192,6 +193,17 @@ def read_dwords_le(data: bytes, offset: int, count: int) -> List[int]:
     return items
 
 
+def read_dwords_le_signed(data: bytes, offset: int, count: int) -> List[int]:
+    """Read little-endian 32-bit signed words from a byte buffer."""
+    items: List[int] = []
+    for i in range(count):
+        off = offset + i*4
+        if off+4 > len(data):
+            break
+        items.append(struct.unpack_from(SDWORD_LE, data, off)[0])
+    return items
+
+
 def parse_tables(decrypted: bytes) -> List[Row]:
     """Parse tables from the decrypted data.
 
@@ -225,7 +237,7 @@ def parse_tables(decrypted: bytes) -> List[Row]:
     comps: List[int] = []
     if total > COMPANY_VALUE_TABLE_OFFSET:
         max_comp = min(MAX_ENTRIES, (total - COMPANY_VALUE_TABLE_OFFSET) // 4)
-        comps = read_dwords_le(decrypted, COMPANY_VALUE_TABLE_OFFSET, max_comp)
+        comps = read_dwords_le_signed(decrypted, COMPANY_VALUE_TABLE_OFFSET, max_comp)
     # Winners
     wins: List[str] = []
     if total > WINNER_TABLE_OFFSET:
@@ -235,11 +247,12 @@ def parse_tables(decrypted: bytes) -> List[Row]:
     rows: List[Row] = []
     count = max(len(files), len(names), len(comps), len(wins))
     for i in range(count):
+        cv = comps[i] if i < len(comps) else None
         rows.append({
             'index': i,
             'filename': files[i] if i < len(files) else '',
             'name': names[i] if i < len(names) else '',
-            'company_value': comps[i] if i < len(comps) else None,
+            'company_value': cv,
             'winner': wins[i] if i < len(wins) else '',
         })
 

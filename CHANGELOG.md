@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## 0.1.1 — 2025-10-29
+- Added: `--merge` to combine new entries with an existing `highscores.dat`.
+	- Matches by filename (case-insensitive) and keeps the higher company value; winner/timestamp from the winning entry are preserved.
+- Changed: Preserve negative company values end-to-end; values from CSS0 are read as signed and written as signed money64 in `highscores.dat`.
 - Fix: Avoid 10× inflated company values when using `--css0` by not re-scaling already-internal units.
 - CSV path now requires `company_value` in internal units (display ×10); the previous CSV scaling option has been removed.
 - Documentation updates and packaging polish.

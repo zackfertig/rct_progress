@@ -26,6 +26,7 @@ from pathlib import Path
 import argparse
 import sys
 import tempfile
+from typing import BinaryIO, Dict, Tuple
 
 VERSION = 2
 INT64_MIN = -9223372036854775808
@@ -111,21 +112,113 @@ def rows_from_css0(css0_path: Path) -> list[dict]:
     return normalized
 
 
+# --- Merge support ---
+def _read_cstring(fh: BinaryIO) -> str:
+    bs = bytearray()
+    while True:
+        b = fh.read(1)
+        if not b or b == b"\x00":
+            break
+        bs += b
+    return bs.decode('utf-8', errors='replace')
+
+
+def load_highscores(path: Path) -> Dict[str, Tuple[str, str, int, int]]:
+    """Load highscores.dat into a dict keyed by lowercase filename.
+
+    Value tuple: (filename_original, winner_name, company_value, timestamp)
+    """
+    result: Dict[str, Tuple[str, str, int, int]] = {}
+    if not path.exists():
+        return result
+    with open(path, 'rb') as f:
+        ver = int.from_bytes(f.read(4), 'little')
+        if ver != VERSION:
+            # Proceed but note: we only write v2; loader will re-write v2
+            pass
+        cnt = int.from_bytes(f.read(4), 'little')
+        for _ in range(cnt):
+            fn = _read_cstring(f)
+            name = _read_cstring(f)
+            val = int.from_bytes(f.read(8), 'little', signed=True)
+            ts = int.from_bytes(f.read(8), 'little', signed=True)
+            result[fn.lower()] = (fn, name, val, ts)
+    return result
+
+
+def best_map_from_rows(rows: list[dict]) -> Dict[str, Tuple[str, str, int, int]]:
+    """Reduce rows to best-by-filename map in internal units, timestamp=INT64_MIN.
+
+    For duplicates in rows, keep the entry with the higher company_value.
+    """
+    best: Dict[str, Tuple[str, str, int, int]] = {}
+    for r in rows:
+        fn = Path((r.get('filename') or '').strip()).name
+        if not fn:
+            continue
+        winner = (r.get('winner') or '').strip()
+        if not winner:
+            continue
+        val = to_money64(r.get('company_value'))
+        key = fn.lower()
+        prev = best.get(key)
+        if prev is None or val > prev[2]:
+            best[key] = (fn, winner, val, INT64_MIN)
+    return best
+
+
+def write_from_map(entries: Dict[str, Tuple[str, str, int, int]], out_path: Path):
+    items = list(entries.values())
+    # Deterministic order by filename
+    items.sort(key=lambda t: t[0].lower())
+    with open(out_path, 'wb') as f:
+        f.write(struct.pack('<I', VERSION))
+        f.write(struct.pack('<I', len(items)))
+        for fn, name, val, ts in items:
+            write_cstring(f, fn)
+            write_cstring(f, name)
+            f.write(struct.pack('<q', int(val)))
+            f.write(struct.pack('<q', int(ts)))
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Build OpenRCT2 highscores.dat (v2) from RCT1 CSV or CSS0.DAT')
     src = parser.add_mutually_exclusive_group(required=True)
     src.add_argument('-i', '--input', help='Path to input CSV (filename, name, company_value, winner)')
     src.add_argument('--css0', help='Path to CSS0.DAT to parse directly')
     parser.add_argument('-o', '--output', required=True, help='Path to output highscores.dat')
+    parser.add_argument('--merge', action='store_true', help='Merge into existing highscores.dat (keep higher company value per scenario)')
     args = parser.parse_args()
 
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
+    # Load existing map if merge
+    existing_map: Dict[str, Tuple[str, str, int, int]] = {}
+    if args.merge and out.exists():
+        existing_map = load_highscores(out)
+
+    # Build new map from input
     if args.css0:
         rows = rows_from_css0(Path(args.css0))
-        # CSS0 company_value is already in internal units (×10)
-        build_from_rows(rows, out)
     else:
         csv_in = Path(args.input)
-        # CSV company_value must already be internal units (×10)
-        build(csv_in, out)
+        with open(csv_in, newline='', encoding='utf-8-sig') as fh:
+            rows = list(csv.DictReader(fh))
+
+    new_map = best_map_from_rows(rows)
+
+    if args.merge:
+        # Merge: prefer higher company value per filename
+        merged = dict(existing_map)
+        for k, v in new_map.items():
+            prev = merged.get(k)
+            if prev is None or v[2] > prev[2]:
+                merged[k] = v
+        write_from_map(merged, out)
+        print(f"highscores.dat merged and written: {out}")
+        print(f"Entries: {len(merged)}")
+    else:
+        # Overwrite with only new entries
+        write_from_map(new_map, out)
+        print(f"highscores.dat written: {out}")
+        print(f"Entries: {len(new_map)}")

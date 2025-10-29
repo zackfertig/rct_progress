@@ -2,39 +2,95 @@
 
 Convert RollerCoaster Tycoon 1 progress into OpenRCT2’s highscores.dat so Classic/AA/LL scenarios show as completed with the correct winner's name and park value.
 
-Tested with OpenRCT2 v0.4.27 on Windows.
+Tested with OpenRCT2 v0.4.27. Commands are provided for Windows (PowerShell) and macOS/Linux (bash). Use whichever matches your shell, with Python 3.8+ installed.
 
 ## 1) Generate highscores.dat (recommended)
 
 Prerequisites
-- Windows with Python 3.8+
+- Python 3.8+ (Windows/macOS/Linux)
 - Either:
 	- CSS0.DAT from RCT1 (preferred), or
 	- A CSV with columns: `filename`, `name` (optional), `company_value`, `winner`
 
 Usage (from this repo folder)
-- From CSV:
+- From CSV (Windows PowerShell):
 ```powershell
 py .\build_highscores.py -i .\outdir\css0_parsed_split.csv -o .\outdir\highscores.dat
+
+# Merge into an existing highscores.dat instead of overwriting
+# IMPORTANT: Back up your existing highscores.dat before merging!
+# Example:
+# $dst = Join-Path $env:USERPROFILE 'Documents\OpenRCT2\highscores.dat'
+# if (Test-Path $dst) { $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'; Copy-Item $dst "$dst.bak-$stamp" -Force }
+py .\build_highscores.py -i .\outdir\css0_parsed_split.csv -o .\outdir\highscores.dat --merge
 ```
 
-- Directly from CSS0.DAT (no CSV needed):
+- From CSV (macOS/Linux bash):
+```bash
+python3 ./build_highscores.py -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat
+
+# Merge into an existing highscores.dat instead of overwriting
+# IMPORTANT: Back up your existing highscores.dat before merging!
+# macOS:   dst="$HOME/Library/Application Support/OpenRCT2/highscores.dat"
+# Linux:   dst="$HOME/.config/OpenRCT2/highscores.dat"
+# Backup:  [ -f "$dst" ] && cp -p "$dst" "$dst.bak-$(date +%Y%m%d-%H%M%S)"
+python3 ./build_highscores.py -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat --merge
+```
+
+- Directly from CSS0.DAT (no CSV needed, Windows PowerShell):
 ```powershell
 py .\build_highscores.py --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat
+
+# Merge into an existing highscores.dat instead of overwriting
+# IMPORTANT: Back up your existing highscores.dat before merging!
+# Example:
+# $dst = Join-Path $env:USERPROFILE 'Documents\OpenRCT2\highscores.dat'
+# if (Test-Path $dst) { $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'; Copy-Item $dst "$dst.bak-$stamp" -Force }
+py .\build_highscores.py --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat --merge
+```
+
+- Directly from CSS0.DAT (no CSV needed, macOS/Linux bash):
+```bash
+python3 ./build_highscores.py --css0 "/path/to/RollerCoaster Tycoon/DATA/CSS0.DAT" -o ./outdir/highscores.dat
+
+# Merge into an existing highscores.dat instead of overwriting
+# IMPORTANT: Back up your existing highscores.dat before merging!
+# macOS:   dst="$HOME/Library/Application Support/OpenRCT2/highscores.dat"
+# Linux:   dst="$HOME/.config/OpenRCT2/highscores.dat"
+# Backup:  [ -f "$dst" ] && cp -p "$dst" "$dst.bak-$(date +%Y%m%d-%H%M%S)"
+python3 ./build_highscores.py --css0 "/path/to/RollerCoaster Tycoon/DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge
 ```
 
 Install into OpenRCT2
+- Windows (PowerShell):
 ```powershell
 Copy-Item .\outdir\highscores.dat "$env:USERPROFILE\Documents\OpenRCT2\highscores.dat" -Force
+```
+- macOS (bash):
+```bash
+install -d "$HOME/Library/Application Support/OpenRCT2"
+cp -f ./outdir/highscores.dat "$HOME/Library/Application Support/OpenRCT2/highscores.dat"
+```
+- Linux (bash):
+```bash
+install -d "$HOME/.config/OpenRCT2"
+cp -f ./outdir/highscores.dat "$HOME/.config/OpenRCT2/highscores.dat"
 ```
 Restart OpenRCT2.
 
 Notes
 - Matching is by scenario file name only (e.g., `sc0.sc4`). The scenario must exist and be indexed by OpenRCT2.
 - Scaling:
-		- CSV path: `company_value` must be specified in internal units (display currency ×10). No additional scaling is applied.
-	- CSS0 path: values are already in internal units (×10); no extra scaling is applied (prevents 10× inflation).
+- CSV path: `company_value` must be specified in internal units (display currency ×10).
+- CSS0 path: values are already in internal units (×10); no extra scaling is applied (prevents 10× inflation).
+- Negative values: supported and preserved end-to-end; they are written as signed money64 values in highscores.dat.
 - If you also have legacy `scores.dat`, `highscores.dat` takes precedence.
+- Merging behavior (`--merge`):
+	- One entry per scenario filename (case-insensitive)
+	- When duplicates exist, the higher company value wins (positives beat negatives; among negatives, the less negative wins)
+	- Winner name comes from the winning entry
+	- Existing timestamps are preserved; new entries use a minimal timestamp
+	- Tip: Back up `%USERPROFILE%\Documents\OpenRCT2\highscores.dat` before running a merge
 
 Troubleshooting (AA scenarios)
 - Symptom: AA scenarios appear completed but can’t be selected, or you see duplicates (e.g., Funtopia).
@@ -53,12 +109,13 @@ Legacy RCT2 scores.dat
 Small utilities to decrypt, decompress, and parse RCT1’s `CSS0.DAT` into a CSV.
 
 Quick start
-```powershell
+- Cross-platform (bash/PowerShell):
+```bash
 # in-place run (from repo root)
-python -m rct_progress.cli -i CSS0.DAT -o css0_parsed.csv
+python3 -m rct_progress.cli -i CSS0.DAT -o css0_parsed.csv
 
 # optional: install locally and use console script
-python -m pip install -e .
+python3 -m pip install -e .
 rct-progress -i CSS0.DAT -o css0_parsed.csv
 ```
 
@@ -67,7 +124,7 @@ Logging & intermediates
 - `-k/--keep-intermediate` writes intermediate raw binaries next to the input.
 
 Examples
-```powershell
+```bash
 rct-progress -i CSS0.DAT -o css0_parsed.csv -v
 rct-progress -i CSS0.DAT -o css0_parsed.csv -v -k
 # alias: --output can be used instead of --out
@@ -87,9 +144,9 @@ API reference
 ## Development
 
 Build
-```powershell
-python -m pip install --upgrade build
-python -m build
+```bash
+python3 -m pip install --upgrade build
+python3 -m build
 ```
 
 Contributing
@@ -132,5 +189,7 @@ Developer notes
 		py .\build_highscores.py --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat
 		```
 	- Notes:
-			- CSV path requires company_value in internal units (display ×10).
-			- CSS0 path writes values as-is (already ×10), avoiding double scaling.
+		- CSV path requires company_value in internal units (display ×10).
+		- CSS0 path writes values as-is in internal units (display ×10).
+		- Negative values are preserved end-to-end and written as signed money64.
+		- `--merge` merges with an existing highscores.dat, keeping the entry with the higher company value per scenario and preserving timestamps where present.
