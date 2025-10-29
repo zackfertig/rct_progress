@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.2 — 2025-10-29
+- CI: Consolidated release process to a single workflow; removed conflicting `.github/workflows/release.yml`.
+- CI: Auto-generate Release notes from `CHANGELOG.md` with dynamic artifact links.
+- CI: Stabilized runners — pin PyInstaller, standardize invocation (`python -m pyinstaller`), use bash + strict mode.
+- CI: Linux AppImage step temporarily disabled to unblock release; Linux CLI binary still ships.
+- CI: Matrix `fail-fast: false` so one platform doesn’t cancel others.
+
 ## 0.2.1 — 2025-10-29
 - Added: macOS .app droplet for true drag-and-drop.
 - Added: Linux AppImage with desktop integration and multi-file drag-and-drop support.
