@@ -59,14 +59,14 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          python -m PyInstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core build_highscores.py
+          python -m PyInstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core src/rct_progress/highscores.py
 
       - name: Build rct-highscores (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
-          python -m PyInstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core build_highscores.py
+          python -m PyInstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core src/rct_progress/highscores.py
 
       - name: Build rct-progress (Windows)
         if: runner.os == 'Windows'
@@ -87,7 +87,7 @@ jobs:
         run: |
           set -euo pipefail
           # Build a GUI .app that accepts dropped files as argv
-          python -m PyInstaller --windowed --name "RCT Highscores Droplet" --paths src --hidden-import rct_progress.core build_highscores.py
+          python -m PyInstaller --windowed --name "RCT Highscores Droplet" --paths src --hidden-import rct_progress.core src/rct_progress/highscores.py
           # Zip the .app bundle for distribution
           mkdir -p artifacts
           ARCH_RAW="$(uname -m)"
@@ -100,13 +100,52 @@ jobs:
           esac
           ditto -c -k --sequesterRsrc --keepParent "dist/RCT Highscores Droplet.app" "artifacts/RCT-Highscores-Droplet-macos-$ARCH.zip"
 
-      - name: Build Linux AppImage (drag-and-drop via .desktop %F) [temporarily disabled]
-        if: runner.os == 'Linux' && false
+      - name: Build Linux AppImage (drag-and-drop via .desktop %F)
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           set -euo pipefail
-          echo "Skipping AppImage build for this run."
-          exit 0
+          # Prepare AppDir structure
+          APPDIR="AppDir"
+          BIN="dist/rct-highscores"
+          [ -f "$BIN" ] || { echo "Missing $BIN; PyInstaller build must have failed" >&2; exit 1; }
+          rm -rf "$APPDIR"
+          mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/applications" "$APPDIR/usr/share/icons/hicolor/256x256/apps"
+          install -m 0755 "$BIN" "$APPDIR/usr/bin/rct-highscores"
+          # AppRun launcher to forward args
+          cat > "$APPDIR/AppRun" << 'EOF'
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "$0")")"
+          exec "$HERE/usr/bin/rct-highscores" "$@"
+          EOF
+          chmod +x "$APPDIR/AppRun"
+          # Desktop entry (accept multiple files)
+          cat > "$APPDIR/rct-highscores.desktop" << 'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=RCT Highscores
+          Comment=Build or merge OpenRCT2 highscores.dat from RCT1 CSS0.DAT or CSV
+          Exec=AppRun %F
+          Icon=rct-highscores
+          Terminal=false
+          Categories=Game;Utility;
+          EOF
+          # Minimal placeholder icon if none available
+          # (Optional) You can replace this with a project icon later
+          convert -size 256x256 canvas:white -gravity center -pointsize 28 -fill black -annotate +0+0 "RCT" "$APPDIR/usr/share/icons/hicolor/256x256/apps/rct-highscores.png" 2>/dev/null || true
+          # Download appimagetool
+          mkdir -p artifacts
+          APPIMG_TOOL=appimagetool-x86_64.AppImage
+          curl -L -o "$APPIMG_TOOL" https://github.com/AppImage/AppImageKit/releases/download/13/$APPIMG_TOOL
+          chmod +x "$APPIMG_TOOL"
+          # Build AppImage
+          ARCH_RAW="$(uname -m)"
+          case "$ARCH_RAW" in
+            x86_64|amd64) ARCH=x64 ;;
+            aarch64|arm64) ARCH=arm64 ;;
+            *) ARCH="$ARCH_RAW" ;;
+          esac
+          ./$APPIMG_TOOL "$APPDIR" "artifacts/RCT-Highscores-linux-$ARCH.AppImage"
 
       - name: Prepare artifacts
         shell: bash
