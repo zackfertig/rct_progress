@@ -1,0 +1,83 @@
+name: Build portable binaries
+
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        python-version: ['3.11']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install build deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller
+
+      - name: Build rct-highscores (PyInstaller)
+        run: |
+          pyinstaller --onefile --name rct-highscores build_highscores.py
+
+      - name: Build rct-progress (PyInstaller)
+        run: |
+          pyinstaller --onefile --name rct-progress src/rct_progress/cli.py
+
+      - name: Prepare artifacts
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          PLATFORM="unknown"
+          case "${{ runner.os }}" in
+            Windows) PLATFORM=win-x64 ;;
+            Linux) PLATFORM=linux-x64 ;;
+            macOS) PLATFORM=macos-x64 ;;
+          esac
+          echo "Platform: $PLATFORM"
+          # PyInstaller puts binaries in dist/
+          cp dist/rct-highscores* artifacts/ 2>/dev/null || true
+          cp dist/rct-progress* artifacts/ 2>/dev/null || true
+          # Suffix files with platform for clarity
+          for f in artifacts/*; do
+            bn=$(basename "$f")
+            mv "$f" "artifacts/${bn}.${PLATFORM}"
+          done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rct_progress-${{ github.ref_name }}-${{ runner.os }}
+          path: artifacts/*
+
+  release:
+    name: Attach to GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./all-artifacts
+
+      - name: Create/Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            all-artifacts/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

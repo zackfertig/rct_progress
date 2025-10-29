@@ -12,6 +12,17 @@ Prerequisites
 	- CSS0.DAT from RCT1 (preferred), or
 	- A CSV with columns: `filename`, `name` (optional), `company_value`, `winner`
 
+Prebuilt binaries (no Python required)
+- For convenience, portable binaries may be attached to Releases (Windows/macOS/Linux):
+	- rct-highscores: standalone highscores.dat builder/merger
+	- rct-progress: CSS0.DAT → CSV parser
+- Usage is the same as the Python scripts; just replace the python invocation with the binary:
+	- Windows: `./rct-highscores.exe --css0 "...\DATA\CSS0.DAT" -o ./outdir/highscores.dat --merge`
+	- macOS: `./rct-highscores --css0 "/path/.../DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge`
+	- Linux: `./rct-highscores --css0 "/path/.../DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge`
+	- If macOS blocks execution, remove quarantine and make it executable: `xattr -dr com.apple.quarantine ./rct-highscores; chmod +x ./rct-highscores`
+	- On Linux, mark executable if needed: `chmod +x ./rct-highscores`
+
 Usage (from this repo folder)
 - From CSV (Windows PowerShell):
 ```powershell
