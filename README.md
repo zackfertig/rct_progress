@@ -4,6 +4,12 @@ Convert RollerCoaster Tycoon 1 progress into OpenRCT2’s highscores.dat so Clas
 
 Tested with OpenRCT2 v0.4.27. Commands are provided for Windows (PowerShell) and macOS/Linux (bash). Use whichever matches your shell, with Python 3.8+ installed. Platform-specific binaries that support drag and drop are also released.
 
+## What’s new in 0.2.2
+
+- CI: Single unified workflow builds binaries and publishes Releases with auto-generated notes.
+- CI: Stabilized PyInstaller usage across OSes; fixed Windows/macOS interpreter mismatch.
+- Linux: AppImage temporarily disabled for this tag to unblock the release; CLI one-file binary still provided.
+
 ## What’s new in 0.2.1
 
 - macOS: Native .app “droplet” for true drag‑and‑drop (no Terminal needed).
@@ -16,7 +22,7 @@ Always get the latest prebuilt binaries from the Releases page:
 
 - Latest release: https://github.com/zackfertig/rct_progress/releases/latest
 
-The Release body includes direct links for Windows, macOS (.app droplet and CLI), and Linux (AppImage and CLI) for the current tag.
+The Release body includes direct links for Windows, macOS (.app droplet and CLI), and Linux (CLI; AppImage may be temporarily unavailable for some tags) for the current tag.
 
 ## Quick start: Drag & Drop (no Python)
 
@@ -29,7 +35,7 @@ The Release body includes direct links for Windows, macOS (.app droplet and CLI)
 	- Two files: Drop `CSS0.DAT` and an existing `highscores.dat` together to MERGE and write back to the dropped highscores path
 - Tip: Back up your existing highscores.dat before merging.
 - macOS (.app): Download `rct-highscores.app` and drag files onto it (Finder or Dock). If Gatekeeper warns, right‑click the app → Open. Advanced: `xattr -dr com.apple.quarantine rct-highscores.app`.
-- Linux (AppImage): Download `rct-highscores-*.AppImage`, mark executable, and double‑click. Drag files onto the launcher/icon if your desktop supports it. First run may offer “Integrate” into your menu.
+- Linux (AppImage): When available, download `rct-highscores-*.AppImage`, mark executable, and double‑click. Drag files onto the launcher/icon if your desktop supports it. First run may offer “Integrate” into your menu.
 
 ## 1) Generate highscores.dat (recommended)
 

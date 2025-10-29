@@ -95,7 +95,15 @@ jobs:
           "$PY" -m pyinstaller --windowed --name "RCT Highscores Droplet" --paths src --hidden-import rct_progress.core build_highscores.py
           # Zip the .app bundle for distribution
           mkdir -p artifacts
-          ditto -c -k --sequesterRsrc --keepParent "dist/RCT Highscores Droplet.app" "artifacts/RCT-Highscores-Droplet-macos-x64.zip"
+          ARCH_RAW="$(uname -m)"
+          case "$ARCH_RAW" in
+            arm64) ARCH="arm64" ;;
+            aarch64) ARCH="arm64" ;;
+            x86_64) ARCH="x64" ;;
+            amd64) ARCH="x64" ;;
+            *) ARCH="$ARCH_RAW" ;;
+          esac
+          ditto -c -k --sequesterRsrc --keepParent "dist/RCT Highscores Droplet.app" "artifacts/RCT-Highscores-Droplet-macos-$ARCH.zip"
 
       - name: Build Linux AppImage (drag-and-drop via .desktop %F) [temporarily disabled]
         if: runner.os == 'Linux' && false
@@ -110,13 +118,39 @@ jobs:
         run: |
           set -e
           mkdir -p artifacts
+          # Determine platform and CPU architecture for artifact suffixes
           case "${{ runner.os }}" in
-            Windows) PLATFORM=win-x64 ;;
-            Linux) PLATFORM=linux-x64 ;;
-            macOS) PLATFORM=macos-x64 ;;
-            *) PLATFORM=unknown ;;
+            Windows)
+              PLATFORM=win
+              ARCH_RAW="${PROCESSOR_ARCHITECTURE:-AMD64}"
+              case "$ARCH_RAW" in
+                AMD64|x86_64) ARCH=x64 ;;
+                ARM64|aarch64) ARCH=arm64 ;;
+                *) ARCH="$ARCH_RAW" ;;
+              esac
+              ;;
+            Linux)
+              PLATFORM=linux
+              ARCH_RAW="$(uname -m)"
+              case "$ARCH_RAW" in
+                x86_64|amd64) ARCH=x64 ;;
+                aarch64|arm64) ARCH=arm64 ;;
+                *) ARCH="$ARCH_RAW" ;;
+              esac
+              ;;
+            macOS)
+              PLATFORM=macos
+              ARCH_RAW="$(uname -m)"
+              case "$ARCH_RAW" in
+                x86_64|amd64) ARCH=x64 ;;
+                arm64|aarch64) ARCH=arm64 ;;
+                *) ARCH="$ARCH_RAW" ;;
+              esac
+              ;;
+            *) PLATFORM=unknown; ARCH=unknown ;;
           esac
           echo "Platform: $PLATFORM"
+          echo "Arch: $ARCH"
           for bin in rct-highscores rct-progress; do
             for path in dist/$bin*; do
               [ ! -e "$path" ] && continue
@@ -125,7 +159,7 @@ jobs:
               if [[ "$fname" == *.exe ]]; then
                 ext=".exe"; name="${fname%.exe}"
               fi
-              mv "$path" "artifacts/${name}-${PLATFORM}${ext}"
+              mv "$path" "artifacts/${name}-${PLATFORM}-${ARCH}${ext}"
             done
           done
 
