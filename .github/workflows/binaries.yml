@@ -37,12 +37,7 @@ jobs:
           python -c "import sys; print(sys.executable); print(sys.version)"
           python -m pip install --upgrade pip
           python -m pip install "pyinstaller==6.10.0"
-          python - << 'PY'
-          import sys
-          import PyInstaller
-          print('Python:', sys.version)
-          print('PyInstaller:', PyInstaller.__version__)
-          PY
+          python -c "import sys, PyInstaller; print('Python:', sys.version); print('PyInstaller:', PyInstaller.__version__)"
 
       - name: Install build deps (Unix)
         if: runner.os != 'Windows'
