@@ -130,16 +130,13 @@ jobs:
           Terminal=false
           Categories=Game;Utility;
           EOF
-          # Minimal placeholder icon if none available
-          # (Optional) You can replace this with a project icon later
+          # Minimal placeholder icon (PNG) with ImageMagick; install if missing
           ICON_PATH="$APPDIR/usr/share/icons/hicolor/256x256/apps/rct-highscores.png"
-          if command -v convert >/dev/null 2>&1; then
-            convert -size 256x256 canvas:white -gravity center -pointsize 28 -fill black -annotate +0+0 "RCT" "$ICON_PATH" || true
+          if ! command -v convert >/dev/null 2>&1; then
+            sudo apt-get update -y
+            sudo apt-get install -y imagemagick
           fi
-          # Ensure an icon exists even if ImageMagick is unavailable (use base64-embedded 1x1 PNG)
-          if [ ! -f "$ICON_PATH" ]; then
-            printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAPAAAADwCAYAAACZKxW1AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsSAAALEgHS3X78AAABcUlEQVR4nO3RMQEAIAwAsL/5b0YbK0Sga0C6wcnBK8D2rQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPD7B0oAAQyS6y0AAAAASUVORK5CYII=' | base64 -d > "$ICON_PATH" || true
-          fi
+          convert -size 256x256 xc:white -gravity center -pointsize 28 -fill black -annotate +0+0 "RCT" "$ICON_PATH"
           # Try linuxdeploy for dependency bundling; fallback to appimagetool if not available
           mkdir -p artifacts
           LINUXDEPLOY=linuxdeploy-x86_64.AppImage
