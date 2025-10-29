@@ -29,49 +29,60 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install build deps
+      - name: Install build deps (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $PY = Join-Path $env:pythonLocation 'python.exe'
+          Write-Host "Using Python: $PY"
+          & $PY -m pip install --upgrade pip
+          & $PY -m pip install "pyinstaller==6.10.0"
+          & $PY -c "import sys, PyInstaller; print('Python:', sys.version); print('PyInstaller:', PyInstaller.__version__)"
+
+      - name: Install build deps (Unix)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${RUNNER_OS:-}" = "Windows" ]; then
-            PY="$(echo "$pythonLocation" | sed 's#\\\\#/#g')/python.exe"
-          else
-            PY="$pythonLocation/bin/python"
-          fi
+          PY="$pythonLocation/bin/python"
           echo "Using Python: $PY"
           "$PY" -m pip install --upgrade pip
           "$PY" -m pip install "pyinstaller==6.10.0"
           "$PY" - << 'PY'
           import sys
+          import PyInstaller
           print('Python:', sys.version)
-          try:
-              import PyInstaller
-              print('PyInstaller:', PyInstaller.__version__)
-          except Exception as e:
-              print('PyInstaller import failed:', e)
-              raise
+          print('PyInstaller:', PyInstaller.__version__)
           PY
 
-      - name: Build rct-highscores (PyInstaller)
+      - name: Build rct-highscores (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $PY = Join-Path $env:pythonLocation 'python.exe'
+          & $PY -m pyinstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core build_highscores.py
+
+      - name: Build rct-highscores (Unix)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${RUNNER_OS:-}" = "Windows" ]; then
-            PY="$(echo "$pythonLocation" | sed 's#\\\\#/#g')/python.exe"
-          else
-            PY="$pythonLocation/bin/python"
-          fi
+          PY="$pythonLocation/bin/python"
           "$PY" -m pyinstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core build_highscores.py
 
-      - name: Build rct-progress (PyInstaller)
+      - name: Build rct-progress (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $PY = Join-Path $env:pythonLocation 'python.exe'
+          & $PY -m pyinstaller --onefile --name rct-progress --paths src src/rct_progress/cli.py
+
+      - name: Build rct-progress (Unix)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${RUNNER_OS:-}" = "Windows" ]; then
-            PY="$(echo "$pythonLocation" | sed 's#\\\\#/#g')/python.exe"
-          else
-            PY="$pythonLocation/bin/python"
-          fi
+          PY="$pythonLocation/bin/python"
           "$PY" -m pyinstaller --onefile --name rct-progress --paths src src/rct_progress/cli.py
 
       - name: Build macOS .app droplet (drag-and-drop)
@@ -80,11 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           # Build a GUI .app that accepts dropped files as argv
-          if [ "${RUNNER_OS:-}" = "Windows" ]; then
-            PY="$(echo "$pythonLocation" | sed 's#\\\\#/#g')/python.exe"
-          else
-            PY="$pythonLocation/bin/python"
-          fi
+          PY="$pythonLocation/bin/python"
           "$PY" -m pyinstaller --windowed --name "RCT Highscores Droplet" --paths src --hidden-import rct_progress.core build_highscores.py
           # Zip the .app bundle for distribution
           mkdir -p artifacts
