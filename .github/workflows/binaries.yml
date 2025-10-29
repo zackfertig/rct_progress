@@ -132,17 +132,20 @@ jobs:
           EOF
           # Minimal placeholder icon if none available
           # (Optional) You can replace this with a project icon later
+          ICON_PATH="$APPDIR/usr/share/icons/hicolor/256x256/apps/rct-highscores.png"
           if command -v convert >/dev/null 2>&1; then
-            convert -size 256x256 canvas:white -gravity center -pointsize 28 -fill black -annotate +0+0 "RCT" "$APPDIR/usr/share/icons/hicolor/256x256/apps/rct-highscores.png"
-          else
-            # No ImageMagick; leave icon empty or provide a simple placeholder later
-            :
+            convert -size 256x256 canvas:white -gravity center -pointsize 28 -fill black -annotate +0+0 "RCT" "$ICON_PATH" || true
+          fi
+          # Ensure an icon exists even if ImageMagick is unavailable (use base64-embedded 1x1 PNG)
+          if [ ! -f "$ICON_PATH" ]; then
+            printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAPAAAADwCAYAAACZKxW1AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsSAAALEgHS3X78AAABcUlEQVR4nO3RMQEAIAwAsL/5b0YbK0Sga0C6wcnBK8D2rQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPD7B0oAAQyS6y0AAAAASUVORK5CYII=' | base64 -d > "$ICON_PATH" || true
           fi
           # Try linuxdeploy for dependency bundling; fallback to appimagetool if not available
           mkdir -p artifacts
           LINUXDEPLOY=linuxdeploy-x86_64.AppImage
           curl -fsSL -o "$LINUXDEPLOY" "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/$LINUXDEPLOY" || true
           chmod +x "$LINUXDEPLOY" 2>/dev/null || true
+          export APPIMAGE_EXTRACT_AND_RUN=1
           ARCH_RAW="$(uname -m)"
           case "$ARCH_RAW" in
             x86_64|amd64) ARCH=x64 ;;
@@ -151,7 +154,7 @@ jobs:
           esac
           if [ -x "$LINUXDEPLOY" ]; then
             # linuxdeploy expects .desktop and binary in place
-            ./$LINUXDEPLOY --appdir "$APPDIR" -o appimage -i "$APPDIR/usr/share/icons/hicolor/256x256/apps/rct-highscores.png" -d "$APPDIR/rct-highscores.desktop"
+            ./$LINUXDEPLOY --appdir "$APPDIR" -o appimage -i "$ICON_PATH" -d "$APPDIR/rct-highscores.desktop"
             mv *.AppImage "artifacts/RCT-Highscores-linux-$ARCH.AppImage"
           else
             # Fallback: appimagetool
@@ -162,13 +165,7 @@ jobs:
             if head -c 10 "$APPIMG_TOOL" | grep -q "^<!DOCTYPE"; then echo "appimagetool download failed (HTML)" >&2; exit 1; fi
             ./$APPIMG_TOOL "$APPDIR" "artifacts/RCT-Highscores-linux-$ARCH.AppImage"
           fi
-          ARCH_RAW="$(uname -m)"
-          case "$ARCH_RAW" in
-            x86_64|amd64) ARCH=x64 ;;
-            aarch64|arm64) ARCH=arm64 ;;
-            *) ARCH="$ARCH_RAW" ;;
-          esac
-          ./$APPIMG_TOOL "$APPDIR" "artifacts/RCT-Highscores-linux-$ARCH.AppImage"
+          # End AppImage build step
 
       - name: Prepare artifacts
         shell: bash
