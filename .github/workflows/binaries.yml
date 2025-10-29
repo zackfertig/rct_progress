@@ -146,15 +146,123 @@ jobs:
     needs: [build, package]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+      actions: read
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./all-artifacts
 
+      - name: Generate release notes from CHANGELOG.md
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG_NAME="${GITHUB_REF_NAME}"
+          VERSION="${TAG_NAME#v}"
+          echo "Preparing release notes for v$VERSION"
+          # Extract the section for this version (from '## <version>' to the next '## ')
+          awk -v ver="$VERSION" '
+            $0 ~ "^## " ver {flag=1; next} 
+            flag && /^## / {flag=0} 
+            flag {print}
+          ' CHANGELOG.md > .ch_section || true
+
+          # Fallback if nothing was extracted
+          if [ ! -s .ch_section ]; then
+            echo "No dedicated section for v$VERSION found in CHANGELOG.md; using a generic note." >&2
+            echo "See CHANGELOG.md for details." > .ch_section
+          fi
+
+          REPO="${GITHUB_REPOSITORY}"
+          # Dynamically build download links from artifacts to support new arches (e.g., macos-arm64)
+          WINDOWS_ITEMS=""
+          MACOS_ITEMS=""
+          LINUX_ITEMS=""
+          OTHER_ITEMS=""
+          while IFS= read -r -d '' f; do
+            base="$(basename "$f")"
+            url="https://github.com/$REPO/releases/download/$TAG_NAME/$base"
+            case "$base" in
+              *win-*.exe)
+                if [[ "$base" == rct-highscores-* ]]; then
+                  WINDOWS_ITEMS+="  - rct-highscores: $url\n"
+                elif [[ "$base" == rct-progress-* ]]; then
+                  WINDOWS_ITEMS+="  - rct-progress: $url\n"
+                else
+                  WINDOWS_ITEMS+="  - $base: $url\n"
+                fi
+                ;;
+              RCT-Highscores-Droplet-macos-*.zip)
+                MACOS_ITEMS+="  - rct-highscores (.app droplet): $url\n"
+                ;;
+              *macos-*)
+                if [[ "$base" == rct-highscores-* ]]; then
+                  MACOS_ITEMS+="  - rct-highscores (CLI one-file): $url\n"
+                elif [[ "$base" == rct-progress-* ]]; then
+                  MACOS_ITEMS+="  - rct-progress (CLI one-file): $url\n"
+                else
+                  MACOS_ITEMS+="  - $base: $url\n"
+                fi
+                ;;
+              RCT-Highscores-linux-*.AppImage)
+                LINUX_ITEMS+="  - rct-highscores (AppImage): $url\n"
+                ;;
+              *linux-*)
+                if [[ "$base" == rct-highscores-* ]]; then
+                  LINUX_ITEMS+="  - rct-highscores (CLI one-file): $url\n"
+                elif [[ "$base" == rct-progress-* ]]; then
+                  LINUX_ITEMS+="  - rct-progress (CLI one-file): $url\n"
+                else
+                  LINUX_ITEMS+="  - $base: $url\n"
+                fi
+                ;;
+              *)
+                OTHER_ITEMS+="  - $base: $url\n"
+                ;;
+            esac
+          done < <(find all-artifacts -type f -print0 2>/dev/null || true)
+
+          {
+            echo "What's new in v$VERSION"
+            echo
+            cat .ch_section
+            echo
+            echo "Downloads"
+            if [ -n "$WINDOWS_ITEMS" ]; then
+              echo "- Windows"
+              printf "%b" "$WINDOWS_ITEMS"
+            fi
+            if [ -n "$MACOS_ITEMS" ]; then
+              echo "- macOS"
+              printf "%b" "$MACOS_ITEMS"
+            fi
+            if [ -n "$LINUX_ITEMS" ]; then
+              echo "- Linux"
+              printf "%b" "$LINUX_ITEMS"
+            fi
+            if [ -n "$OTHER_ITEMS" ]; then
+              echo "- Other"
+              printf "%b" "$OTHER_ITEMS"
+            fi
+          } > release_notes.md
+
       - name: Create/Update GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: ncipollo/release-action@v1
         with:
-          files: |
+          token: ${{ github.token }}
+          tag: ${{ github.ref_name }}
+          name: rct_progress ${{ github.ref_name }}
+          bodyFile: release_notes.md
+          draft: false
+          prerelease: false
+          allowUpdates: true
+          makeLatest: true
+          removeArtifacts: false
+          artifactContentType: application/octet-stream
+          artifacts: |
             all-artifacts/**
-          token: ${{ secrets.GITHUB_TOKEN }}

@@ -2,12 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.2.0 — 2025-10-29
 ## 0.2.1 — 2025-10-29
 - Added: macOS .app droplet for true drag-and-drop.
 - Added: Linux AppImage with desktop integration and multi-file drag-and-drop support.
 - CI: Fixed Windows binary naming to preserve .exe and add platform suffix before extension.
 
+## 0.2.0 — 2025-10-29
 - Added: Portable binaries (Windows/macOS/Linux) built with PyInstaller and attached to Releases.
 - Added: Drag-and-drop support in rct-highscores binary:
 	- Drop CSS0.DAT to generate highscores.dat into the default OpenRCT2 user folder.
@@ -25,7 +25,6 @@ All notable changes to this project will be documented in this file.
 - CSV path now requires `company_value` in internal units (display ×10); the previous CSV scaling option has been removed.
 - Documentation updates and packaging polish.
 
-## 2025-10-28
 ## 0.1.0 — 2025-10-28
  - Unify documentation into a single `README.md` with end-to-end instructions.
  - Add direct `CSS0.DAT` → `highscores.dat` support to `build_highscores.py`.
@@ -34,7 +33,6 @@ All notable changes to this project will be documented in this file.
 	- Verified end-to-end with OpenRCT2 v0.4.27 on Windows.
 
 
-All notable changes to this project will be documented in this file.
 - CLI behavior: `--verbose` only increases logging; intermediates are written only with `--keep-intermediate`.
 - Company value typing normalized: `company_value` is now Optional[int] in memory and rendered as empty in CSV when missing.
 - README: added Developer notes section and documented `--keep-intermediate` and `--output` alias.
