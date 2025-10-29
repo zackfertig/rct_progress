@@ -1,5 +1,9 @@
 name: Build portable binaries
 
+# Ensure the workflow token can create/update releases
+permissions:
+  contents: write
+
 on:
   workflow_dispatch: {}
   push:
@@ -106,5 +110,4 @@ jobs:
         with:
           files: |
             all-artifacts/**
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
