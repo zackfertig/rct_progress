@@ -31,22 +31,20 @@ jobs:
 
       - name: Build rct-highscores (PyInstaller)
         run: |
-          pyinstaller --onefile --name rct-highscores build_highscores.py
+          pyinstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core build_highscores.py
 
       - name: Build rct-progress (PyInstaller)
         run: |
-          pyinstaller --onefile --name rct-progress src/rct_progress/cli.py
+          pyinstaller --onefile --name rct-progress --paths src src/rct_progress/cli.py
 
       - name: Prepare artifacts
         shell: bash
         run: |
+          set -e
           mkdir -p artifacts
-          PLATFORM="unknown"
-          case "${{ runner.os }}" in
-            Windows) PLATFORM=win-x64 ;;
-            Linux) PLATFORM=linux-x64 ;;
-            macOS) PLATFORM=macos-x64 ;;
-          esac
+          OS="${{ runner.os }}"
+          ARCH="${{ runner.arch }}"
+          PLATFORM="${OS}-${ARCH}"
           echo "Platform: $PLATFORM"
           # PyInstaller puts binaries in dist/
           cp dist/rct-highscores* artifacts/ 2>/dev/null || true
