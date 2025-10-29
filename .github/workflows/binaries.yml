@@ -152,7 +152,16 @@ jobs:
           if [ -x "$LINUXDEPLOY" ]; then
             # linuxdeploy expects .desktop and binary in place
             ./$LINUXDEPLOY --appdir "$APPDIR" -o appimage -i "$ICON_PATH" -d "$APPDIR/rct-highscores.desktop"
-            mv *.AppImage "artifacts/RCT-Highscores-linux-$ARCH.AppImage"
+            # Robustly locate the generated AppImage (name is derived by appimagetool)
+            mkdir -p artifacts
+            APPIMG_OUT="$(ls -1 *.AppImage 2>/dev/null | head -n 1 || true)"
+            if [ -z "$APPIMG_OUT" ]; then
+              echo "No .AppImage produced in $(pwd). Contents:" >&2
+              ls -la >&2 || true
+              exit 1
+            fi
+            echo "Found AppImage: $APPIMG_OUT"
+            mv "$APPIMG_OUT" "artifacts/RCT-Highscores-linux-$ARCH.AppImage"
           else
             # Fallback: appimagetool
             APPIMG_TOOL=appimagetool-x86_64.AppImage
