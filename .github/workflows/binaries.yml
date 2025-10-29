@@ -60,7 +60,7 @@ jobs:
         shell: pwsh
         run: |
           $PY = Join-Path $env:pythonLocation 'python.exe'
-          & $PY -m pyinstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core build_highscores.py
+          & $PY -m PyInstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core build_highscores.py
 
       - name: Build rct-highscores (Unix)
         if: runner.os != 'Windows'
@@ -68,14 +68,14 @@ jobs:
         run: |
           set -euo pipefail
           PY="$pythonLocation/bin/python"
-          "$PY" -m pyinstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core build_highscores.py
+          "$PY" -m PyInstaller --onefile --name rct-highscores --paths src --hidden-import rct_progress.core build_highscores.py
 
       - name: Build rct-progress (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $PY = Join-Path $env:pythonLocation 'python.exe'
-          & $PY -m pyinstaller --onefile --name rct-progress --paths src src/rct_progress/cli.py
+          & $PY -m PyInstaller --onefile --name rct-progress --paths src src/rct_progress/cli.py
 
       - name: Build rct-progress (Unix)
         if: runner.os != 'Windows'
@@ -83,7 +83,7 @@ jobs:
         run: |
           set -euo pipefail
           PY="$pythonLocation/bin/python"
-          "$PY" -m pyinstaller --onefile --name rct-progress --paths src src/rct_progress/cli.py
+          "$PY" -m PyInstaller --onefile --name rct-progress --paths src src/rct_progress/cli.py
 
       - name: Build macOS .app droplet (drag-and-drop)
         if: runner.os == 'macOS'
@@ -92,7 +92,7 @@ jobs:
           set -euo pipefail
           # Build a GUI .app that accepts dropped files as argv
           PY="$pythonLocation/bin/python"
-          "$PY" -m pyinstaller --windowed --name "RCT Highscores Droplet" --paths src --hidden-import rct_progress.core build_highscores.py
+          "$PY" -m PyInstaller --windowed --name "RCT Highscores Droplet" --paths src --hidden-import rct_progress.core build_highscores.py
           # Zip the .app bundle for distribution
           mkdir -p artifacts
           ARCH_RAW="$(uname -m)"
