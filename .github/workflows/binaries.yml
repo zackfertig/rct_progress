@@ -46,17 +46,23 @@ jobs:
         run: |
           set -e
           mkdir -p artifacts
-          OS="${{ runner.os }}"
-          ARCH="${{ runner.arch }}"
-          PLATFORM="${OS}-${ARCH}"
+          case "${{ runner.os }}" in
+            Windows) PLATFORM=win-x64 ;;
+            Linux) PLATFORM=linux-x64 ;;
+            macOS) PLATFORM=macos-x64 ;;
+            *) PLATFORM=unknown ;;
+          esac
           echo "Platform: $PLATFORM"
-          # PyInstaller puts binaries in dist/
-          cp dist/rct-highscores* artifacts/ 2>/dev/null || true
-          cp dist/rct-progress* artifacts/ 2>/dev/null || true
-          # Suffix files with platform for clarity
-          for f in artifacts/*; do
-            bn=$(basename "$f")
-            mv "$f" "artifacts/${bn}.${PLATFORM}"
+          for bin in rct-highscores rct-progress; do
+            for path in dist/$bin*; do
+              [ ! -e "$path" ] && continue
+              fname="$(basename "$path")"
+              name="$fname"; ext=""
+              if [[ "$fname" == *.exe ]]; then
+                ext=".exe"; name="${fname%.exe}"
+              fi
+              mv "$path" "artifacts/${name}-${PLATFORM}${ext}"
+            done
           done
 
       - name: Upload artifacts
