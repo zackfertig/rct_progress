@@ -2,7 +2,7 @@
 # CSV columns expected: filename,name,company_value,winner
 # - filename: scenario filename (SC*.SC4), case preserved
 # - name: scenario display name (optional)
-# - company_value: integer currency units (e.g., 80000 for $80,000)
+# - company_value: integer internal units (display currency ×10)
 # - winner: player name; if empty, entry won't be written
 #
 # Output: highscores.dat alongside the CSV
@@ -37,7 +37,7 @@ def write_cstring(fh, s: str, encoding='utf-8'):
     fh.write(b'\x00')
 
 
-def to_money64(company_value_field: str | int | float | None, *, scale: int = 10) -> int:
+def to_money64(company_value_field: str | int | float | None) -> int:
     if company_value_field is None:
         return 0
     s = str(company_value_field).strip()
@@ -47,11 +47,11 @@ def to_money64(company_value_field: str | int | float | None, *, scale: int = 10
         v = int(float(s))
     except ValueError:
         return 0
-    # money64 internal units: typically value ×10; allow overriding via scale
-    return int(v * scale)
+    # money64 internal units expected directly (×10 already applied)
+    return int(v)
 
 
-def build_from_rows(rows: list[dict], out_path: Path, *, value_scale: int = 10):
+def build_from_rows(rows: list[dict], out_path: Path):
     filtered = [r for r in rows if (r.get('filename') or '').strip() and (r.get('winner') or '').strip()]
 
     with open(out_path, 'wb') as f:
@@ -62,7 +62,7 @@ def build_from_rows(rows: list[dict], out_path: Path, *, value_scale: int = 10):
         for r in filtered:
             file_name_only = Path(r.get('filename').strip()).name
             winner = r.get('winner', '').strip()
-            money64 = to_money64(r.get('company_value'), scale=value_scale)
+            money64 = to_money64(r.get('company_value'))
 
             write_cstring(f, file_name_only)
             write_cstring(f, winner)
@@ -73,10 +73,10 @@ def build_from_rows(rows: list[dict], out_path: Path, *, value_scale: int = 10):
     print(f"Entries: {len(filtered)}")
 
 
-def build(csv_path: Path, out_path: Path, *, value_scale: int = 10):
+def build(csv_path: Path, out_path: Path):
     with open(csv_path, newline='', encoding='utf-8-sig') as fh:
         rows = list(csv.DictReader(fh))
-    build_from_rows(rows, out_path, value_scale=value_scale)
+    build_from_rows(rows, out_path)
 
 
 def rows_from_css0(css0_path: Path) -> list[dict]:
@@ -117,15 +117,15 @@ if __name__ == '__main__':
     src.add_argument('-i', '--input', help='Path to input CSV (filename, name, company_value, winner)')
     src.add_argument('--css0', help='Path to CSS0.DAT to parse directly')
     parser.add_argument('-o', '--output', required=True, help='Path to output highscores.dat')
-    parser.add_argument('--scale', type=int, default=10, help='CSV company_value scale factor (default: 10). For CSS0.DAT, scaling is not applied (already internal units).')
     args = parser.parse_args()
 
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     if args.css0:
         rows = rows_from_css0(Path(args.css0))
-        # CSS0 company_value is already in internal units (×10), so do not rescale.
-        build_from_rows(rows, out, value_scale=1)
+        # CSS0 company_value is already in internal units (×10)
+        build_from_rows(rows, out)
     else:
         csv_in = Path(args.input)
-        build(csv_in, out, value_scale=args.scale)
+        # CSV company_value must already be internal units (×10)
+        build(csv_in, out)

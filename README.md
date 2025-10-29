@@ -1,6 +1,6 @@
 # Import RCT1 progress into OpenRCT2
 
-Convert RollerCoaster Tycoon 1 progress into OpenRCT2’s highscores.dat so Classic/AA/LL scenarios (e.g., Forest Frontiers) show as completed.
+Convert RollerCoaster Tycoon 1 progress into OpenRCT2’s highscores.dat so Classic/AA/LL scenarios show as completed with the correct winner's name and park value.
 
 Tested with OpenRCT2 v0.4.27 on Windows.
 
@@ -32,7 +32,7 @@ Restart OpenRCT2.
 Notes
 - Matching is by scenario file name only (e.g., `sc0.sc4`). The scenario must exist and be indexed by OpenRCT2.
 - Scaling:
-	- CSV path: `company_value` is specified in whole currency units and scaled by `--scale` (default 10) to internal units.
+		- CSV path: `company_value` must be specified in internal units (display currency ×10). No additional scaling is applied.
 	- CSS0 path: values are already in internal units (×10); no extra scaling is applied (prevents 10× inflation).
 - If you also have legacy `scores.dat`, `highscores.dat` takes precedence.
 
@@ -132,5 +132,5 @@ Developer notes
 		py .\build_highscores.py --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat
 		```
 	- Notes:
-		- CSV path scales company_value by `--scale` (default 10) to internal units.
-		- CSS0 path writes values as-is (already ×10), avoiding double scaling.
+			- CSV path requires company_value in internal units (display ×10).
+			- CSS0 path writes values as-is (already ×10), avoiding double scaling.

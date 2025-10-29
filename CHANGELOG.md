@@ -3,7 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## 0.1.1 — 2025-10-29
-- Fix: Avoid 10× inflated company values when using `--css0` by not re-scaling already-internal units; CSV path has configurable `--scale` (default 10).
+- Fix: Avoid 10× inflated company values when using `--css0` by not re-scaling already-internal units.
+- CSV path now requires `company_value` in internal units (display ×10); the previous CSV scaling option has been removed.
 - Documentation updates and packaging polish.
 
 ## 2025-10-28
