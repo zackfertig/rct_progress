@@ -2,7 +2,19 @@
 
 Convert RollerCoaster Tycoon 1 progress into OpenRCT2’s highscores.dat so Classic/AA/LL scenarios show as completed with the correct winner's name and park value.
 
-Tested with OpenRCT2 v0.4.27. Commands are provided for Windows (PowerShell) and macOS/Linux (bash). Use whichever matches your shell, with Python 3.8+ installed.
+Tested with OpenRCT2 v0.4.27. Commands are provided for Windows (PowerShell) and macOS/Linux (bash). Use whichever matches your shell, with Python 3.8+ installed. Platform-specific binaries that support drag and drop are also released.
+
+## Quick start: Drag & Drop (no Python)
+
+- Download the `rct-highscores` binary for your platform from the Releases page.
+- Drag and drop your files onto `rct-highscores`:
+	- Single file: Drop `CSS0.DAT` to generate a `highscores.dat` in your OpenRCT2 user folder
+		- Windows: `%USERPROFILE%\Documents\OpenRCT2\highscores.dat`
+		- macOS: `~/Library/Application Support/OpenRCT2/highscores.dat`
+		- Linux: `~/.config/OpenRCT2/highscores.dat`
+	- Two files: Drop `CSS0.DAT` and an existing `highscores.dat` together to MERGE and write back to the dropped highscores path
+- Tip: Back up your existing highscores.dat before merging.
+- macOS: If execution is blocked, run `xattr -dr com.apple.quarantine ./rct-highscores; chmod +x ./rct-highscores` once.
 
 ## 1) Generate highscores.dat (recommended)
 

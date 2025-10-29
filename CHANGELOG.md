@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.0 — 2025-10-29
+- Added: Portable binaries (Windows/macOS/Linux) built with PyInstaller and attached to Releases.
+- Added: Drag-and-drop support in rct-highscores binary:
+	- Drop CSS0.DAT to generate highscores.dat into the default OpenRCT2 user folder.
+	- Drop CSS0.DAT + highscores.dat together to merge and write back to the provided highscores file.
+- Added: Cross-platform README with Windows/macOS/Linux examples and install paths.
+- Changed: Merge behavior documented more clearly; backup guidance included.
+- Changed: Preserve negative company values end-to-end and write as signed money64.
+- Fixed: Avoid 10× inflation on CSS0 route by not re-scaling internal units.
+
 ## 0.1.1 — 2025-10-29
 - Added: `--merge` to combine new entries with an existing `highscores.dat`.
 	- Matches by filename (case-insensitive) and keeps the higher company value; winner/timestamp from the winning entry are preserved.
