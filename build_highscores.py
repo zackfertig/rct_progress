@@ -26,6 +26,7 @@ from pathlib import Path
 import argparse
 import sys
 import tempfile
+from typing import BinaryIO
 
 VERSION = 2
 INT64_MIN = -9223372036854775808
@@ -37,7 +38,7 @@ def write_cstring(fh, s: str, encoding='utf-8'):
     fh.write(b'\x00')
 
 
-def to_money64(company_value_field: str | int | float | None) -> int:
+def to_money64(company_value_field: str | int | float | None, *, scale: int = 10) -> int:
     if company_value_field is None:
         return 0
     s = str(company_value_field).strip()
@@ -47,11 +48,11 @@ def to_money64(company_value_field: str | int | float | None) -> int:
         v = int(float(s))
     except ValueError:
         return 0
-    # money64: internal scale x10
-    return int(v * 10)
+    # money64 internal units: typically value ×10; allow overriding via scale
+    return int(v * scale)
 
 
-def build_from_rows(rows: list[dict], out_path: Path):
+def build_from_rows(rows: list[dict], out_path: Path, *, value_scale: int = 10):
     filtered = [r for r in rows if (r.get('filename') or '').strip() and (r.get('winner') or '').strip()]
 
     with open(out_path, 'wb') as f:
@@ -62,7 +63,7 @@ def build_from_rows(rows: list[dict], out_path: Path):
         for r in filtered:
             file_name_only = Path(r.get('filename').strip()).name
             winner = r.get('winner', '').strip()
-            money64 = to_money64(r.get('company_value'))
+            money64 = to_money64(r.get('company_value'), scale=value_scale)
 
             write_cstring(f, file_name_only)
             write_cstring(f, winner)
@@ -73,10 +74,35 @@ def build_from_rows(rows: list[dict], out_path: Path):
     print(f"Entries: {len(filtered)}")
 
 
-def build(csv_path: Path, out_path: Path):
+def _read_cstring(fh: BinaryIO) -> str:
+    bs = bytearray()
+    while True:
+        b = fh.read(1)
+        if not b or b == b"\x00":
+            break
+        bs += b
+    return bs.decode('utf-8', errors='replace')
+
+
+def verify_highscores(path: Path, *, limit: int = 10):
+    with open(path, 'rb') as f:
+        ver = int.from_bytes(f.read(4), 'little')
+        cnt = int.from_bytes(f.read(4), 'little')
+        print(f"version={ver} entries={cnt}")
+        n = min(cnt, max(0, limit))
+        for i in range(n):
+            fn = _read_cstring(f)
+            name = _read_cstring(f)
+            val = int.from_bytes(f.read(8), 'little', signed=True)
+            ts = int.from_bytes(f.read(8), 'little', signed=True)
+            # Print value in display currency units by dividing by 10
+            print(f"{i+1:2d}. {fn:20s} {name:20s} value={val/10:.0f}")
+
+
+def build(csv_path: Path, out_path: Path, *, value_scale: int = 10):
     with open(csv_path, newline='', encoding='utf-8-sig') as fh:
         rows = list(csv.DictReader(fh))
-    build_from_rows(rows, out_path)
+    build_from_rows(rows, out_path, value_scale=value_scale)
 
 
 def rows_from_css0(css0_path: Path) -> list[dict]:
@@ -117,13 +143,20 @@ if __name__ == '__main__':
     src.add_argument('-i', '--input', help='Path to input CSV (filename, name, company_value, winner)')
     src.add_argument('--css0', help='Path to CSS0.DAT to parse directly')
     parser.add_argument('-o', '--output', required=True, help='Path to output highscores.dat')
+    parser.add_argument('--scale', type=int, default=10, help='CSV company_value scale factor (default: 10). For CSS0.DAT, scaling is not applied (already internal units).')
+    parser.add_argument('--verify', action='store_true', help='After writing, read highscores.dat and print a brief summary')
+    parser.add_argument('--limit', type=int, default=10, help='Limit number of entries to display during --verify (default: 10)')
     args = parser.parse_args()
 
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     if args.css0:
         rows = rows_from_css0(Path(args.css0))
-        build_from_rows(rows, out)
+        # CSS0 company_value is already in internal units (×10), so do not rescale.
+        build_from_rows(rows, out, value_scale=1)
     else:
         csv_in = Path(args.input)
-        build(csv_in, out)
+        build(csv_in, out, value_scale=args.scale)
+
+    if args.verify:
+        verify_highscores(out, limit=args.limit)

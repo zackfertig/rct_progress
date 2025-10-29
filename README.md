@@ -24,10 +24,10 @@ OpenRCT2 stores highscores in a binary file with the following layout (version 2
 py .\build_highscores.py -i .\outdir\css0_parsed_split.csv -o .\outdir\highscores.dat
 ```
 
-Or convert directly from CSS0.DAT without creating a CSV first:
+Or convert directly from CSS0.DAT without creating a CSV first (with a quick verify):
 
 ```powershell
-py .\build_highscores.py --css0 "[...]\RollerCoaster Tycoon\\DATA\\CSS0.DAT" -o .\outdir\highscores.dat
+py .\build_highscores.py --css0 "[...]\RollerCoaster Tycoon\\DATA\\CSS0.DAT" -o .\outdir\highscores.dat --verify --limit 10
 ```
 
 Then install into OpenRCT2:
@@ -38,7 +38,11 @@ Restart OpenRCT2.
 
 ### Notes
 - Matching uses only the scenario file name (e.g., `sc0.sc4`). The scenario must be present and indexed in OpenRCT2.
-- Scaling: `company_value` is treated as whole currency units and stored ×10 internally.
+- Scaling:
+	- CSV path: `company_value` is treated as whole currency units and scaled by `--scale` (default 10) into internal units.
+	- CSS0 path: values are already in internal units (×10), so the script writes them without additional scaling (no 10× inflation).
+
+	- New in 0.1.1: `--verify` reads the generated `highscores.dat` and prints the header and first N entries so you can sanity check values without extra tools.
 - If you also have legacy `scores.dat`, highscores.dat takes precedence.
 
 ### Troubleshooting (AA scenarios)

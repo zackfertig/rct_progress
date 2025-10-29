@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rct_progress"
-version = "0.1.0"
+version = "0.1.1"
 description = "Tools for decrypting and parsing RCT CSS0.DAT progress/scenario archives"
 authors = [
   { name = "zackfertig", email = "zack@example.com" }
@@ -30,3 +30,4 @@ where = ["src"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+
