@@ -41,6 +41,47 @@ jobs:
         run: |
           pyinstaller --onefile --name rct-progress --paths src src/rct_progress/cli.py
 
+      - name: Build macOS .app droplet (drag-and-drop)
+        if: runner.os == 'macOS'
+        run: |
+          # Build a GUI .app that accepts dropped files as argv
+          pyinstaller --windowed --name "RCT Highscores Droplet" --paths src --hidden-import rct_progress.core build_highscores.py
+          # Zip the .app bundle for distribution
+          mkdir -p artifacts
+          ditto -c -k --sequesterRsrc --keepParent "dist/RCT Highscores Droplet.app" "artifacts/RCT-Highscores-Droplet-macos-x64.zip"
+
+      - name: Build Linux AppImage (drag-and-drop via .desktop %F)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -e
+          mkdir -p AppDir/usr/bin
+          # Use the built onefile binary for the payload
+          cp dist/rct-highscores AppDir/usr/bin/
+          chmod +x AppDir/usr/bin/rct-highscores
+          # Minimal AppRun forwarding args
+          cat > AppDir/AppRun << 'EOF'
+          #!/bin/sh
+          exec "$APPDIR/usr/bin/rct-highscores" "$@"
+          EOF
+          chmod +x AppDir/AppRun
+          # Desktop entry with multi-file support (%F)
+          cat > AppDir/rct-highscores.desktop << 'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=RCT Highscores
+          Comment=Generate or merge OpenRCT2 highscores.dat from CSS0.DAT
+          Exec=rct-highscores %F
+          Terminal=false
+          Categories=Utility;
+          EOF
+          # Fetch appimagetool
+          curl -L -o appimagetool "https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage"
+          chmod +x appimagetool
+          ./appimagetool AppDir RCT-Highscores-linux-x64.AppImage
+          mkdir -p artifacts
+          mv RCT-Highscores-linux-x64.AppImage artifacts/
+
       - name: Prepare artifacts
         shell: bash
         run: |
