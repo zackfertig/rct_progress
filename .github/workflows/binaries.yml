@@ -381,5 +381,6 @@ jobs:
           makeLatest: true
           removeArtifacts: false
           artifactContentType: application/octet-stream
+          # Only upload files (exclude the artifact directories themselves)
           artifacts: |
-            all-artifacts/**
+            all-artifacts/*/*
