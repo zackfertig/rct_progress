@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.3 — 2025-10-30
+- Changed: Drag-and-drop binaries now write `highscores.dat` next to the binary by default (instead of directly into the OpenRCT2 user folder). This reduces confusion and makes it easy to inspect/copy the result.
+- Added: On Windows, after a drag-and-drop run completes, the console window stays open until the user presses Enter (so messages are visible).
+- Docs: README updated to reflect the new drag-and-drop defaults and the Windows pause-on-exit behavior.
+- CI: Linux AppImage packaging step now robustly detects the generated .AppImage filename and moves it into the artifacts folder with a stable name.
+
 ## 0.2.2 — 2025-10-29
 - Added: `rct-highscores` console script entry point (`rct_progress.highscores:main`).
 - Changed: highscores builder moved into the package (`src/rct_progress/highscores.py`); removed root `build_highscores.py` script. README updated to recommend `rct-highscores` and `python -m rct_progress.highscores`.
