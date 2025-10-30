@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rct_progress"
-version = "0.2.3"
+version = "0.3.0"
 description = "Tools for decrypting and parsing RCT CSS0.DAT progress/scenario archives"
 authors = [
   { name = "zackfertig", email = "zack@example.com" }
@@ -22,9 +22,9 @@ keywords = ["rollercoaster-tycoon", "rct", "css0", "rle", "decompress", "decrypt
 
 [project.urls]
 [project.scripts]
-# console script mapping: rct-progress -> rct_progress.cli:main
-rct-progress = "rct_progress.cli:main"
-rct-highscores = "rct_progress.highscores:main"
+# New console scripts
+rct-to-csv = "rct_progress.cli:main"
+rct-to-openrct = "rct_progress.highscores:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

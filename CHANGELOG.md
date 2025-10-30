@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.0 — 2025-10-30
+- Breaking: One-shot rename of tools and binaries to clearer names:
+	- `rct-highscores` → `rct-to-openrct` (build/merge highscores.dat)
+	- `rct-progress` → `rct-to-csv` (parse CSS0.DAT → CSV)
+- CI/Artifacts: All binary names, macOS droplet, and Linux AppImage updated accordingly; release notes generator matches new names.
+- Docs: README updated to use the new names throughout.
+
 ## 0.2.3 — 2025-10-30
 - Changed: Drag-and-drop binaries now write `highscores.dat` next to the binary by default (instead of directly into the OpenRCT2 user folder). This reduces confusion and makes it easy to inspect/copy the result.
 - Added: On Windows, after a drag-and-drop run completes, the console window stays open until the user presses Enter (so messages are visible).

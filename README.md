@@ -14,14 +14,14 @@ The Release body includes direct links for Windows, macOS (.app droplet and CLI)
 
 ## Quick start: Drag & Drop (no Python)
 
-- Download the `rct-highscores` binary for your platform from the Releases page.
-- Drag and drop your files onto `rct-highscores`:
+- Download the `rct-to-openrct` binary for your platform from the Releases page.
+- Drag and drop your files onto `rct-to-openrct`:
 	- Single file: Drop `CSS0.DAT` to generate a `highscores.dat` next to the binary (same folder as the executable/app).
 	- Two files: Drop `CSS0.DAT` and an existing `highscores.dat` together to MERGE. If you dropped a highscores.dat, it will be updated in-place; otherwise the merged output is written next to the binary.
 - Tip: Back up your existing highscores.dat before merging.
 - Windows: After drag-and-drop finishes, the console window stays open until you press Enter (so you can read the messages).
-- macOS (.app): Download `rct-highscores.app` and drag files onto it (Finder or Dock). If Gatekeeper warns, right‑click the app → Open. Advanced: `xattr -dr com.apple.quarantine rct-highscores.app`.
-- Linux (AppImage): When available, download `rct-highscores-*.AppImage`, mark executable, and double‑click. Drag files onto the launcher/icon if your desktop supports it. First run may offer “Integrate” into your menu.
+- macOS (.app): Download the zipped droplet `RCT-to-OpenRCT-Droplet-macos-<arch>.zip`, extract `RCT → OpenRCT Droplet.app`, and drag files onto it (Finder or Dock). If Gatekeeper warns, right‑click the app → Open. Advanced: `xattr -dr com.apple.quarantine "RCT → OpenRCT Droplet.app"`.
+- Linux (AppImage): Download `RCT-to-OpenRCT-linux-<arch>.AppImage`, mark executable, and double‑click. Drag files onto the launcher/icon if your desktop supports it. First run may offer “Integrate” into your menu.
 
 ## What’s new in 0.2.2
 
@@ -45,36 +45,37 @@ Prerequisites
 
 Prebuilt binaries (no Python required)
 - For convenience, portable binaries may be attached to Releases (Windows/macOS/Linux):
-	- Windows: `rct-highscores.exe` (drag‑and‑drop onto the .exe)
-	- macOS: `rct-highscores.app` droplet (drag files onto the app)
-	- Linux: `rct-highscores-<arch>.AppImage` (make executable; optional menu integration)
-	- Also available: `rct-progress` (CSS0.DAT → CSV parser)
+	- Windows: `rct-to-openrct.exe` (drag‑and‑drop onto the .exe)
+	- macOS: `RCT → OpenRCT Droplet.app` (zipped as `RCT-to-OpenRCT-Droplet-macos-<arch>.zip`)
+	- Linux: `RCT-to-OpenRCT-linux-<arch>.AppImage` (make executable; optional menu integration)
+	- Also available: `rct-to-csv` (CSS0.DAT → CSV parser)
 - Usage is the same as the Python scripts; just replace the python invocation with the binary:
-	- Windows: `./rct-highscores.exe --css0 "...\DATA\CSS0.DAT" -o ./outdir/highscores.dat --merge`
-	- macOS (CLI one‑file): `./rct-highscores --css0 "/path/.../DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge`
-	- Linux (CLI one‑file): `./rct-highscores --css0 "/path/.../DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge`
-	- macOS Gatekeeper: for the CLI binary, remove quarantine and make it executable if needed: `xattr -dr com.apple.quarantine ./rct-highscores; chmod +x ./rct-highscores`
-	- Linux permissions: mark CLI binary or AppImage executable if needed: `chmod +x ./rct-highscores` or `chmod +x ./rct-highscores-*.AppImage`
+	- Windows: `./rct-to-openrct.exe --css0 "...\DATA\CSS0.DAT" -o ./outdir/highscores.dat --merge`
+	- macOS (CLI one‑file): `./rct-to-openrct --css0 "/path/.../DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge`
+	- Linux (CLI one‑file): `./rct-to-openrct --css0 "/path/.../DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge`
+	- macOS Gatekeeper: for the CLI binary, remove quarantine and make it executable if needed: `xattr -dr com.apple.quarantine ./rct-to-openrct; chmod +x ./rct-to-openrct`
+	- Linux permissions: mark CLI binary or AppImage executable if needed: `chmod +x ./rct-to-openrct` or `chmod +x ./RCT-to-OpenRCT-*.AppImage`
  - Drag-and-drop (binaries only):
-	 - Drop a single `CSS0.DAT` onto `rct-highscores` to generate `highscores.dat` next to the binary (same folder as the executable/app).
-	 - Drop both `CSS0.DAT` and an existing `highscores.dat` onto `rct-highscores` to merge. If a highscores.dat was dropped, it is updated in-place; otherwise the merged output is written next to the binary.
+	 - Drop a single `CSS0.DAT` onto `rct-to-openrct` to generate `highscores.dat` next to the binary (same folder as the executable/app).
+	 - Drop both `CSS0.DAT` and an existing `highscores.dat` onto `rct-to-openrct` to merge. If a highscores.dat was dropped, it is updated in-place; otherwise the merged output is written next to the binary.
 
 OS‑native packages details
 - macOS `.app` droplet
   - Download `rct-highscores.app` from Releases and drag `CSS0.DAT` (and optionally an existing `highscores.dat`) onto it.
   - First‑run security: right‑click the app → Open to bypass Gatekeeper; or remove quarantine via Terminal: `xattr -dr com.apple.quarantine rct-highscores.app`.
+	- Now provided as `RCT-to-OpenRCT-Droplet-macos-<arch>.zip`; extract `RCT → OpenRCT Droplet.app` and drag files onto it.
 	- Outputs next to the app by default when only `CSS0.DAT` is provided; merges if both files are dropped (in-place if a highscores.dat was dropped).
 - Linux AppImage
-  - Download `rct-highscores-*.AppImage`, then: `chmod +x rct-highscores-*.AppImage` and double‑click.
+	- Download `RCT-to-OpenRCT-*.AppImage`, then: `chmod +x RCT-to-OpenRCT-*.AppImage` and double‑click.
   - Optional: run once to integrate into your desktop menu; after integration you can drag files onto the launcher/icon if supported by your environment.
 	- As with other binaries, a single `CSS0.DAT` generates `highscores.dat` next to the AppImage; adding a `highscores.dat` performs an in‑place merge if that file is one of the dropped items.
 
 Usage
 - Preferred (after installing the package locally):
 ```bash
-rct-highscores --css0 "/path/to/.../CSS0.DAT" -o ./outdir/highscores.dat --merge
+rct-to-openrct --css0 "/path/to/.../CSS0.DAT" -o ./outdir/highscores.dat --merge
 # or from CSV
-rct-highscores -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat
+rct-to-openrct -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat
 ```
 
 In-place (from this repo folder)
@@ -82,21 +83,21 @@ Usage examples (PowerShell/Bash)
  Direct from CSS0.DAT (recommended):
 	- Windows PowerShell:
 		```powershell
-		rct-highscores --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat --merge
+		rct-to-openrct --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat --merge
 		```
 	- macOS/Linux:
 		```bash
-		rct-highscores --css0 "/path/to/RollerCoaster Tycoon/DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge
+		rct-to-openrct --css0 "/path/to/RollerCoaster Tycoon/DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge
 		```
 
  From CSV:
 	- Windows PowerShell:
 		```powershell
-		rct-highscores -i .\outdir\css0_parsed_split.csv -o .\outdir\highscores.dat --merge
+		rct-to-openrct -i .\outdir\css0_parsed_split.csv -o .\outdir\highscores.dat --merge
 		```
 	- macOS/Linux:
 		```bash
-		rct-highscores -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat --merge
+		rct-to-openrct -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat --merge
 		```
 
 Install into OpenRCT2
@@ -154,7 +155,7 @@ python3 -m rct_progress.cli -i CSS0.DAT -o css0_parsed.csv
 
 # optional: install locally and use console script
 python3 -m pip install -e .
-rct-progress -i CSS0.DAT -o css0_parsed.csv
+rct-to-csv -i CSS0.DAT -o css0_parsed.csv
 ```
 
 Logging & intermediates
@@ -163,10 +164,10 @@ Logging & intermediates
 
 Examples
 ```bash
-rct-progress -i CSS0.DAT -o css0_parsed.csv -v
-rct-progress -i CSS0.DAT -o css0_parsed.csv -v -k
+rct-to-csv -i CSS0.DAT -o css0_parsed.csv -v
+rct-to-csv -i CSS0.DAT -o css0_parsed.csv -v -k
 # alias: --output can be used instead of --out
-rct-progress -i CSS0.DAT --output css0_parsed.csv
+rct-to-csv -i CSS0.DAT --output css0_parsed.csv
 ```
 
 Output format
@@ -224,7 +225,7 @@ Developer notes
 		```
 	- Or use the installed console script:
 		```powershell
-		rct-highscores --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat
+		rct-to-openrct --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat
 		```
 	- Notes:
 		- CSV path requires company_value in internal units (display ×10).
