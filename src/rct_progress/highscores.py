@@ -176,6 +176,59 @@ def _default_openrct2_dir() -> Path:
     return home / ".config" / "OpenRCT2"
 
 
+def _binary_adjacent_dir() -> Path:
+    """Return a sensible directory "next to the binary" for packaged runs.
+
+    - Linux AppImage: use the directory of the .AppImage file (APPIMAGE env).
+    - macOS .app (frozen): use the directory containing the .app bundle.
+    - Other frozen (Windows/Linux onefile): directory containing sys.executable.
+    - Fallback (non-frozen): current working directory.
+    """
+    # AppImage: environment variable points to the actual .AppImage on disk
+    appimage = os.environ.get("APPIMAGE")
+    if appimage:
+        p = Path(appimage)
+        try:
+            return p.resolve().parent
+        except Exception:
+            return p.parent
+
+    # macOS .app bundles
+    if getattr(sys, "frozen", False) and platform.system() == "Darwin":
+        exe = Path(sys.executable).resolve()
+        # Find the ".app" in parents, if present
+        for parent in exe.parents:
+            if parent.suffix == ".app":
+                return parent.parent  # folder containing the .app
+        return exe.parent
+
+    # General frozen case (Windows/Linux onefile)
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+
+    # Fallback for dev runs
+    return Path.cwd()
+
+
+def _pause_on_exit_windows() -> None:
+    """Keep the console window open on Windows when launched by double-click.
+
+    Intended for drag-and-drop UX. No-op on other platforms.
+    """
+    if platform.system() != "Windows":
+        return
+    try:
+        # input() works when stdin is a console
+        input("Press Enter to exit...")
+    except Exception:
+        try:
+            import msvcrt  # type: ignore
+            print("Press any key to exit...")
+            msvcrt.getch()
+        except Exception:
+            pass
+
+
 def _run_build(css0: Optional[Path], csv_in: Optional[Path], out: Path, merge: bool) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     existing_map: Dict[str, Tuple[str, str, int, int]] = {}
@@ -215,8 +268,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         argv = sys.argv[1:]
 
     # Drag-and-drop friendly handling:
-    #  - If invoked with one positional arg: treat it as CSS0.DAT and write highscores.dat to the default OpenRCT2 dir (no merge).
-    #  - If invoked with two positional args: if one looks like CSS0.DAT and the other looks like highscores.dat, perform a merge and write to the highscores path.
+    #  - If invoked with one positional arg: treat it as CSS0.DAT and write highscores.dat next to the binary (no merge).
+    #  - If invoked with two positional args: if one looks like CSS0.DAT and the other looks like highscores.dat, perform a merge. If no explicit highscores path was provided, write next to the binary.
     dnd_args = [a for a in argv if not a.startswith("-")]
 
     def looks_like_css0(p: Path) -> bool:
@@ -226,10 +279,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         return p.name.lower() == "highscores.dat"
 
     if len(dnd_args) == 1 and all(a.startswith("-") is False for a in dnd_args):
-        # Single file dropped: assume CSS0.DAT -> write to default highscores path
+        # Single file dropped: assume CSS0.DAT -> write next to the binary
         css0p = Path(dnd_args[0]).resolve()
-        outp = _default_openrct2_dir() / "highscores.dat"
+        outp = _binary_adjacent_dir() / "highscores.dat"
         _run_build(css0=css0p, csv_in=None, out=outp, merge=False)
+        _pause_on_exit_windows()
         return 0
 
     if len(dnd_args) == 2:
@@ -246,11 +300,12 @@ def main(argv: Optional[list[str]] = None) -> int:
             highp = p1
         if looks_like_highscores(p2):
             highp = highp or p2
-        # If highscores wasn't explicitly provided, default to platform dir
+        # If highscores wasn't explicitly provided, default to binary-adjacent dir
         if css0p is not None:
             if highp is None:
-                highp = _default_openrct2_dir() / "highscores.dat"
+                highp = _binary_adjacent_dir() / "highscores.dat"
             _run_build(css0=css0p, csv_in=None, out=highp, merge=True)
+            _pause_on_exit_windows()
             return 0
 
     # No drag-and-drop positional case; use standard argparse
