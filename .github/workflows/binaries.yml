@@ -379,7 +379,7 @@ jobs:
           prerelease: false
           allowUpdates: true
           makeLatest: true
-          removeArtifacts: false
+          removeArtifacts: true
           artifactContentType: application/octet-stream
           # Only upload files (exclude the artifact directories themselves)
           artifacts: |
