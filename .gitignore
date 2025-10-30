@@ -11,3 +11,9 @@ CSS0.decrypted.bin
 css0_parsed_new.csv
 debug.log
 outdir/*.py
+outdir/
+
+# Local docs and sample files not meant for the repo
+Building legacy scores.md
+README_rct1_highscores.md
+CSS0.DAT
