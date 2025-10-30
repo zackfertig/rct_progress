@@ -5,8 +5,8 @@ OpenRCT2 highscores.dat (v2) from either a CSV (parsed from RCT1
 CSS0.DAT) or directly from a CSS0.DAT file.
 
 Usage examples (after installation):
-  rct-highscores --css0 ".../DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge
-  rct-highscores -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat
+    rct1-to-openrct2 --css0 ".../DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge
+    rct1-to-openrct2 -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat
 
 You can also run in-place without installation:
   python -m rct_progress.highscores --css0 ".../CSS0.DAT" -o ./outdir/highscores.dat

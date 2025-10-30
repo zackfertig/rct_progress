@@ -55,31 +55,31 @@ jobs:
           print('PyInstaller:', PyInstaller.__version__)
           PY
 
-      - name: Build rct-to-openrct (Windows)
+      - name: Build rct1-to-openrct2 (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          python -m PyInstaller --onefile --name rct-to-openrct --paths src --hidden-import rct_progress.core src/rct_progress/highscores.py
+          python -m PyInstaller --onefile --name rct1-to-openrct2 --paths src --hidden-import rct_progress.core src/rct_progress/highscores.py
 
-      - name: Build rct-to-openrct (Unix)
+      - name: Build rct1-to-openrct2 (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
-          python -m PyInstaller --onefile --name rct-to-openrct --paths src --hidden-import rct_progress.core src/rct_progress/highscores.py
+          python -m PyInstaller --onefile --name rct1-to-openrct2 --paths src --hidden-import rct_progress.core src/rct_progress/highscores.py
 
-      - name: Build rct-to-csv (Windows)
+      - name: Build rct1-to-csv (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          python -m PyInstaller --onefile --name rct-to-csv --paths src src/rct_progress/cli.py
+          python -m PyInstaller --onefile --name rct1-to-csv --paths src src/rct_progress/cli.py
 
-      - name: Build rct-to-csv (Unix)
+      - name: Build rct1-to-csv (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
-          python -m PyInstaller --onefile --name rct-to-csv --paths src src/rct_progress/cli.py
+          python -m PyInstaller --onefile --name rct1-to-csv --paths src src/rct_progress/cli.py
 
       - name: Build macOS .app droplet (drag-and-drop)
         if: runner.os == 'macOS'
@@ -87,7 +87,7 @@ jobs:
         run: |
           set -euo pipefail
           # Build a GUI .app that accepts dropped files as argv
-          python -m PyInstaller --windowed --name "RCT → OpenRCT Droplet" --paths src --hidden-import rct_progress.core src/rct_progress/highscores.py
+          python -m PyInstaller --windowed --name "RCT1 → OpenRCT2 Droplet" --paths src --hidden-import rct_progress.core src/rct_progress/highscores.py
           # Zip the .app bundle for distribution
           mkdir -p artifacts
           ARCH_RAW="$(uname -m)"
@@ -98,7 +98,7 @@ jobs:
             amd64) ARCH="x64" ;;
             *) ARCH="$ARCH_RAW" ;;
           esac
-          ditto -c -k --sequesterRsrc --keepParent "dist/RCT → OpenRCT Droplet.app" "artifacts/RCT-to-OpenRCT-Droplet-macos-$ARCH.zip"
+          ditto -c -k --sequesterRsrc --keepParent "dist/RCT1 → OpenRCT2 Droplet.app" "artifacts/RCT1-to-OpenRCT2-Droplet-macos-$ARCH.zip"
 
       - name: Build Linux AppImage (drag-and-drop via .desktop %F)
         if: runner.os == 'Linux'
@@ -107,36 +107,36 @@ jobs:
           set -euo pipefail
           # Prepare AppDir structure
           APPDIR="AppDir"
-          BIN="dist/rct-to-openrct"
+          BIN="dist/rct1-to-openrct2"
           [ -f "$BIN" ] || { echo "Missing $BIN; PyInstaller build must have failed" >&2; exit 1; }
           rm -rf "$APPDIR"
           mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/applications" "$APPDIR/usr/share/icons/hicolor/256x256/apps"
-          install -m 0755 "$BIN" "$APPDIR/usr/bin/rct-to-openrct"
+          install -m 0755 "$BIN" "$APPDIR/usr/bin/rct1-to-openrct2"
           # AppRun launcher to forward args
           cat > "$APPDIR/AppRun" << 'EOF'
           #!/bin/sh
           HERE="$(dirname "$(readlink -f "$0")")"
-          exec "$HERE/usr/bin/rct-to-openrct" "$@"
+          exec "$HERE/usr/bin/rct1-to-openrct2" "$@"
           EOF
           chmod +x "$APPDIR/AppRun"
           # Desktop entry (accept multiple files)
-          cat > "$APPDIR/rct-to-openrct.desktop" << 'EOF'
+          cat > "$APPDIR/rct1-to-openrct2.desktop" << 'EOF'
           [Desktop Entry]
           Type=Application
-          Name=RCT → OpenRCT (Highscores)
+          Name=RCT1 → OpenRCT2 (Highscores)
           Comment=Build or merge OpenRCT2 highscores.dat from RCT1 CSS0.DAT or CSV
           Exec=AppRun %F
-          Icon=rct-to-openrct
+          Icon=rct1-to-openrct2
           Terminal=false
           Categories=Game;Utility;
           EOF
           # Minimal placeholder icon (PNG) with ImageMagick; install if missing
-          ICON_PATH="$APPDIR/usr/share/icons/hicolor/256x256/apps/rct-to-openrct.png"
+          ICON_PATH="$APPDIR/usr/share/icons/hicolor/256x256/apps/rct1-to-openrct2.png"
           if ! command -v convert >/dev/null 2>&1; then
             sudo apt-get update -y
             sudo apt-get install -y imagemagick
           fi
-          convert -size 256x256 xc:white -gravity center -pointsize 28 -fill black -annotate +0+0 "RCT→O" "$ICON_PATH"
+          convert -size 256x256 xc:white -gravity center -pointsize 28 -fill black -annotate +0+0 "R1→O2" "$ICON_PATH"
           # Try linuxdeploy for dependency bundling; fallback to appimagetool if not available
           mkdir -p artifacts
           LINUXDEPLOY=linuxdeploy-x86_64.AppImage
@@ -151,7 +151,7 @@ jobs:
           esac
           if [ -x "$LINUXDEPLOY" ]; then
             # linuxdeploy expects .desktop and binary in place
-            ./$LINUXDEPLOY --appdir "$APPDIR" -o appimage -i "$ICON_PATH" -d "$APPDIR/rct-to-openrct.desktop"
+            ./$LINUXDEPLOY --appdir "$APPDIR" -o appimage -i "$ICON_PATH" -d "$APPDIR/rct1-to-openrct2.desktop"
             # Robustly locate the generated AppImage (name is derived by appimagetool)
             mkdir -p artifacts
             APPIMG_OUT="$(ls -1 *.AppImage 2>/dev/null | head -n 1 || true)"
@@ -161,7 +161,7 @@ jobs:
               exit 1
             fi
             echo "Found AppImage: $APPIMG_OUT"
-            mv "$APPIMG_OUT" "artifacts/RCT-to-OpenRCT-linux-$ARCH.AppImage"
+            mv "$APPIMG_OUT" "artifacts/RCT1-to-OpenRCT2-linux-$ARCH.AppImage"
           else
             # Fallback: appimagetool
             APPIMG_TOOL=appimagetool-x86_64.AppImage
@@ -169,7 +169,7 @@ jobs:
             chmod +x "$APPIMG_TOOL"
             if [ ! -s "$APPIMG_TOOL" ]; then echo "appimagetool download failed (empty file)" >&2; exit 1; fi
             if head -c 10 "$APPIMG_TOOL" | grep -q "^<!DOCTYPE"; then echo "appimagetool download failed (HTML)" >&2; exit 1; fi
-            ./$APPIMG_TOOL "$APPDIR" "artifacts/RCT-to-OpenRCT-linux-$ARCH.AppImage"
+            ./$APPIMG_TOOL "$APPDIR" "artifacts/RCT1-to-OpenRCT2-linux-$ARCH.AppImage"
           fi
           # End AppImage build step
 
@@ -211,7 +211,7 @@ jobs:
           esac
           echo "Platform: $PLATFORM"
           echo "Arch: $ARCH"
-          for bin in rct-to-openrct rct-to-csv; do
+          for bin in rct1-to-openrct2 rct1-to-csv; do
             for path in dist/$bin*; do
               [ ! -e "$path" ] && continue
               fname="$(basename "$path")"
@@ -306,34 +306,34 @@ jobs:
             url="https://github.com/$REPO/releases/download/$TAG_NAME/$base"
             case "$base" in
               *win-*.exe)
-                if [[ "$base" == rct-to-openrct-* ]]; then
-                  WINDOWS_ITEMS+="  - rct-to-openrct: $url\n"
-                elif [[ "$base" == rct-to-csv-* ]]; then
-                  WINDOWS_ITEMS+="  - rct-to-csv: $url\n"
+                if [[ "$base" == rct1-to-openrct2-* ]]; then
+                  WINDOWS_ITEMS+="  - rct1-to-openrct2: $url\n"
+                elif [[ "$base" == rct1-to-csv-* ]]; then
+                  WINDOWS_ITEMS+="  - rct1-to-csv: $url\n"
                 else
                   WINDOWS_ITEMS+="  - $base: $url\n"
                 fi
                 ;;
-              RCT-to-OpenRCT-Droplet-macos-*.zip)
-                MACOS_ITEMS+="  - rct-to-openrct (.app droplet): $url\n"
+              RCT1-to-OpenRCT2-Droplet-macos-*.zip)
+                MACOS_ITEMS+="  - rct1-to-openrct2 (.app droplet): $url\n"
                 ;;
               *macos-*)
-                if [[ "$base" == rct-to-openrct-* ]]; then
-                  MACOS_ITEMS+="  - rct-to-openrct (CLI one-file): $url\n"
-                elif [[ "$base" == rct-to-csv-* ]]; then
-                  MACOS_ITEMS+="  - rct-to-csv (CLI one-file): $url\n"
+                if [[ "$base" == rct1-to-openrct2-* ]]; then
+                  MACOS_ITEMS+="  - rct1-to-openrct2 (CLI one-file): $url\n"
+                elif [[ "$base" == rct1-to-csv-* ]]; then
+                  MACOS_ITEMS+="  - rct1-to-csv (CLI one-file): $url\n"
                 else
                   MACOS_ITEMS+="  - $base: $url\n"
                 fi
                 ;;
-              RCT-to-OpenRCT-linux-*.AppImage)
-                LINUX_ITEMS+="  - rct-to-openrct (AppImage): $url\n"
+              RCT1-to-OpenRCT2-linux-*.AppImage)
+                LINUX_ITEMS+="  - rct1-to-openrct2 (AppImage): $url\n"
                 ;;
               *linux-*)
-                if [[ "$base" == rct-to-openrct-* ]]; then
-                  LINUX_ITEMS+="  - rct-to-openrct (CLI one-file): $url\n"
-                elif [[ "$base" == rct-to-csv-* ]]; then
-                  LINUX_ITEMS+="  - rct-to-csv (CLI one-file): $url\n"
+                if [[ "$base" == rct1-to-openrct2-* ]]; then
+                  LINUX_ITEMS+="  - rct1-to-openrct2 (CLI one-file): $url\n"
+                elif [[ "$base" == rct1-to-csv-* ]]; then
+                  LINUX_ITEMS+="  - rct1-to-csv (CLI one-file): $url\n"
                 else
                   LINUX_ITEMS+="  - $base: $url\n"
                 fi

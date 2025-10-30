@@ -22,9 +22,9 @@ keywords = ["rollercoaster-tycoon", "rct", "css0", "rle", "decompress", "decrypt
 
 [project.urls]
 [project.scripts]
-# New console scripts
-rct-to-csv = "rct_progress.cli:main"
-rct-to-openrct = "rct_progress.highscores:main"
+# New console scripts (renamed for clarity)
+rct1-to-csv = "rct_progress.cli:main"
+rct1-to-openrct2 = "rct_progress.highscores:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,3 +1,6 @@
+Prebuilt binaries (no Python required)
+- For convenience, portable binaries may be attached to Releases (Windows/macOS/Linux):
+	- Windows: `rct1-to-openrct2.exe` (drag‑and‑drop onto the .exe)
 # Import RCT1 progress into OpenRCT2
 
 Convert RollerCoaster Tycoon 1 progress into OpenRCT2’s highscores.dat so Classic/AA/LL scenarios show as completed with the correct winner's name and park value.
@@ -14,14 +17,14 @@ The Release body includes direct links for Windows, macOS (.app droplet and CLI)
 
 ## Quick start: Drag & Drop (no Python)
 
-- Download the `rct-to-openrct` binary for your platform from the Releases page.
-- Drag and drop your files onto `rct-to-openrct`:
+- Download the `rct1-to-openrct2` binary for your platform from the Releases page.
+- Drag and drop your files onto `rct1-to-openrct2`:
 	- Single file: Drop `CSS0.DAT` to generate a `highscores.dat` next to the binary (same folder as the executable/app).
 	- Two files: Drop `CSS0.DAT` and an existing `highscores.dat` together to MERGE. If you dropped a highscores.dat, it will be updated in-place; otherwise the merged output is written next to the binary.
 - Tip: Back up your existing highscores.dat before merging.
 - Windows: After drag-and-drop finishes, the console window stays open until you press Enter (so you can read the messages).
-- macOS (.app): Download the zipped droplet `RCT-to-OpenRCT-Droplet-macos-<arch>.zip`, extract `RCT → OpenRCT Droplet.app`, and drag files onto it (Finder or Dock). If Gatekeeper warns, right‑click the app → Open. Advanced: `xattr -dr com.apple.quarantine "RCT → OpenRCT Droplet.app"`.
-- Linux (AppImage): Download `RCT-to-OpenRCT-linux-<arch>.AppImage`, mark executable, and double‑click. Drag files onto the launcher/icon if your desktop supports it. First run may offer “Integrate” into your menu.
+- macOS (.app): Download the zipped droplet `RCT1-to-OpenRCT2-Droplet-macos-<arch>.zip`, extract `RCT1 → OpenRCT2 Droplet.app`, and drag files onto it (Finder or Dock). If Gatekeeper warns, right‑click the app → Open. Advanced: `xattr -dr com.apple.quarantine "RCT1 → OpenRCT2 Droplet.app"`.
+- Linux (AppImage): Download `RCT1-to-OpenRCT2-linux-<arch>.AppImage`, mark executable, and double‑click. Drag files onto the launcher/icon if your desktop supports it. First run may offer “Integrate” into your menu.
 
 ## What’s new in 0.2.2
 
@@ -43,9 +46,37 @@ Prerequisites
 	- CSS0.DAT from RCT1 (preferred), or
 	- A CSV with columns: `filename`, `name` (optional), `company_value`, `winner`
 
-Prebuilt binaries (no Python required)
-- For convenience, portable binaries may be attached to Releases (Windows/macOS/Linux):
-	- Windows: `rct-to-openrct.exe` (drag‑and‑drop onto the .exe)
+	- macOS: `RCT1 → OpenRCT2 Droplet.app` (zipped as `RCT1-to-OpenRCT2-Droplet-macos-<arch>.zip`)
+	- Linux: `RCT1-to-OpenRCT2-linux-<arch>.AppImage` (make executable; optional menu integration)
+	- Also available: `rct1-to-csv` (CSS0.DAT → CSV parser)
+	- Windows: `./rct1-to-openrct2.exe --css0 "...\DATA\CSS0.DAT" -o ./outdir/highscores.dat --merge`
+	- macOS (CLI one‑file): `./rct1-to-openrct2 --css0 "/path/.../DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge`
+	- Linux (CLI one‑file): `./rct1-to-openrct2 --css0 "/path/.../DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge`
+	- macOS Gatekeeper: for the CLI binary, remove quarantine and make it executable if needed: `xattr -dr com.apple.quarantine ./rct1-to-openrct2; chmod +x ./rct1-to-openrct2`
+	- Linux permissions: mark CLI binary or AppImage executable if needed: `chmod +x ./rct1-to-openrct2` or `chmod +x ./RCT1-to-OpenRCT2-*.AppImage`
+ 	 - Drop a single `CSS0.DAT` onto `rct1-to-openrct2` to generate `highscores.dat` next to the binary (same folder as the executable/app).
+ 	 - Drop both `CSS0.DAT` and an existing `highscores.dat` onto `rct1-to-openrct2` to merge. If a highscores.dat was dropped, it is updated in-place; otherwise the merged output is written next to the binary.
+	- Download `RCT1-to-OpenRCT2-*.AppImage`, then: `chmod +x RCT1-to-OpenRCT2-*.AppImage` and double‑click.
+```bash
+rct1-to-openrct2 --css0 "/path/to/.../CSS0.DAT" -o ./outdir/highscores.dat --merge
+# or from CSV
+rct1-to-openrct2 -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat
+		```powershell
+		rct1-to-openrct2 --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat --merge
+		```
+		```bash
+		rct1-to-openrct2 --css0 "/path/to/RollerCoaster Tycoon/DATA/CSS0.DAT" -o ./outdir/highscores.dat --merge
+		```
+		```powershell
+		rct1-to-openrct2 -i .\outdir\css0_parsed_split.csv -o .\outdir\highscores.dat --merge
+		```
+		```bash
+		rct1-to-openrct2 -i ./outdir/css0_parsed_split.csv -o ./outdir/highscores.dat --merge
+		```
+		```powershell
+		rct1-to-openrct2 --css0 "[...]\RollerCoaster Tycoon\DATA\CSS0.DAT" -o .\outdir\highscores.dat
+		```
+rct1-to-csv -i CSS0.DAT -o css0_parsed.csv
 	- macOS: `RCT → OpenRCT Droplet.app` (zipped as `RCT-to-OpenRCT-Droplet-macos-<arch>.zip`)
 	- Linux: `RCT-to-OpenRCT-linux-<arch>.AppImage` (make executable; optional menu integration)
 	- Also available: `rct-to-csv` (CSS0.DAT → CSV parser)
@@ -164,9 +195,10 @@ Logging & intermediates
 
 Examples
 ```bash
-rct-to-csv -i CSS0.DAT -o css0_parsed.csv -v
-rct-to-csv -i CSS0.DAT -o css0_parsed.csv -v -k
+rct1-to-csv -i CSS0.DAT -o css0_parsed.csv -v
+rct1-to-csv -i CSS0.DAT -o css0_parsed.csv -v -k
 # alias: --output can be used instead of --out
+rct1-to-csv -i CSS0.DAT --output css0_parsed.csv
 rct-to-csv -i CSS0.DAT --output css0_parsed.csv
 ```
 
