@@ -2,20 +2,7 @@
 
 Convert RollerCoaster Tycoon 1 progress into OpenRCT2’s highscores.dat so Classic/AA/LL scenarios show as completed with the correct winner's name and park value.
 
-Tested with OpenRCT2 v0.4.27. Commands are provided for Windows (PowerShell) and macOS/Linux (bash). Use whichever matches your shell, with Python 3.8+ installed. Platform-specific binaries that support drag and drop are also released.
-Note: In drag-and-drop mode, highscores.dat is written next to the binary by default (not into the OpenRCT2 folder). You can then copy it into your OpenRCT2 user folder if desired.
-
-## What’s new in 0.2.2
-
-- CI: Single unified workflow builds binaries and publishes Releases with auto-generated notes.
-- CI: Stabilized PyInstaller usage across OSes; fixed Windows/macOS interpreter mismatch.
-- Linux: AppImage temporarily disabled for this tag to unblock the release; CLI one-file binary still provided.
-
-## What’s new in 0.2.1
-
-- macOS: Native .app “droplet” for true drag‑and‑drop (no Terminal needed).
-- Linux: AppImage with desktop integration and multi‑file drag‑and‑drop.
-- Windows: Fixed binary naming — .exe preserved with platform suffix in releases.
+Tested with OpenRCT2 v0.4.27.
 
 ## Downloads
 
@@ -35,6 +22,18 @@ The Release body includes direct links for Windows, macOS (.app droplet and CLI)
 - Windows: After drag-and-drop finishes, the console window stays open until you press Enter (so you can read the messages).
 - macOS (.app): Download `rct-highscores.app` and drag files onto it (Finder or Dock). If Gatekeeper warns, right‑click the app → Open. Advanced: `xattr -dr com.apple.quarantine rct-highscores.app`.
 - Linux (AppImage): When available, download `rct-highscores-*.AppImage`, mark executable, and double‑click. Drag files onto the launcher/icon if your desktop supports it. First run may offer “Integrate” into your menu.
+
+## What’s new in 0.2.2
+
+- CI: Single unified workflow builds binaries and publishes Releases with auto-generated notes.
+- CI: Stabilized PyInstaller usage across OSes; fixed Windows/macOS interpreter mismatch.
+- Linux: AppImage temporarily disabled for this tag to unblock the release; CLI one-file binary still provided.
+
+## What’s new in 0.2.1
+
+- macOS: Native .app “droplet” for true drag‑and‑drop (no Terminal needed).
+- Linux: AppImage with desktop integration and multi‑file drag‑and‑drop.
+- Windows: Fixed binary naming — .exe preserved with platform suffix in releases.
 
 ## 1) Generate highscores.dat (recommended)
 
