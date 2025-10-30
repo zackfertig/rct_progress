@@ -3,6 +3,7 @@
 Convert RollerCoaster Tycoon 1 progress into OpenRCT2’s highscores.dat so Classic/AA/LL scenarios show as completed with the correct winner's name and park value.
 
 Tested with OpenRCT2 v0.4.27. Commands are provided for Windows (PowerShell) and macOS/Linux (bash). Use whichever matches your shell, with Python 3.8+ installed. Platform-specific binaries that support drag and drop are also released.
+Note: In drag-and-drop mode, highscores.dat is written next to the binary by default (not into the OpenRCT2 folder). You can then copy it into your OpenRCT2 user folder if desired.
 
 ## What’s new in 0.2.2
 
@@ -28,12 +29,10 @@ The Release body includes direct links for Windows, macOS (.app droplet and CLI)
 
 - Download the `rct-highscores` binary for your platform from the Releases page.
 - Drag and drop your files onto `rct-highscores`:
-	- Single file: Drop `CSS0.DAT` to generate a `highscores.dat` in your OpenRCT2 user folder
-		- Windows: `%USERPROFILE%\Documents\OpenRCT2\highscores.dat`
-		- macOS: `~/Library/Application Support/OpenRCT2/highscores.dat`
-		- Linux: `~/.config/OpenRCT2/highscores.dat`
-	- Two files: Drop `CSS0.DAT` and an existing `highscores.dat` together to MERGE and write back to the dropped highscores path
+	- Single file: Drop `CSS0.DAT` to generate a `highscores.dat` next to the binary (same folder as the executable/app).
+	- Two files: Drop `CSS0.DAT` and an existing `highscores.dat` together to MERGE. If you dropped a highscores.dat, it will be updated in-place; otherwise the merged output is written next to the binary.
 - Tip: Back up your existing highscores.dat before merging.
+- Windows: After drag-and-drop finishes, the console window stays open until you press Enter (so you can read the messages).
 - macOS (.app): Download `rct-highscores.app` and drag files onto it (Finder or Dock). If Gatekeeper warns, right‑click the app → Open. Advanced: `xattr -dr com.apple.quarantine rct-highscores.app`.
 - Linux (AppImage): When available, download `rct-highscores-*.AppImage`, mark executable, and double‑click. Drag files onto the launcher/icon if your desktop supports it. First run may offer “Integrate” into your menu.
 
@@ -58,21 +57,18 @@ Prebuilt binaries (no Python required)
 	- macOS Gatekeeper: for the CLI binary, remove quarantine and make it executable if needed: `xattr -dr com.apple.quarantine ./rct-highscores; chmod +x ./rct-highscores`
 	- Linux permissions: mark CLI binary or AppImage executable if needed: `chmod +x ./rct-highscores` or `chmod +x ./rct-highscores-*.AppImage`
  - Drag-and-drop (binaries only):
-	 - Drop a single `CSS0.DAT` onto `rct-highscores` to generate `highscores.dat` into your default OpenRCT2 user folder:
-		 - Windows: `%USERPROFILE%\Documents\OpenRCT2\highscores.dat`
-		 - macOS: `~/Library/Application Support/OpenRCT2/highscores.dat`
-		 - Linux: `~/.config/OpenRCT2/highscores.dat`
-	 - Drop both `CSS0.DAT` and an existing `highscores.dat` onto `rct-highscores` to merge and write to the given highscores path.
+	 - Drop a single `CSS0.DAT` onto `rct-highscores` to generate `highscores.dat` next to the binary (same folder as the executable/app).
+	 - Drop both `CSS0.DAT` and an existing `highscores.dat` onto `rct-highscores` to merge. If a highscores.dat was dropped, it is updated in-place; otherwise the merged output is written next to the binary.
 
 OS‑native packages details
 - macOS `.app` droplet
   - Download `rct-highscores.app` from Releases and drag `CSS0.DAT` (and optionally an existing `highscores.dat`) onto it.
   - First‑run security: right‑click the app → Open to bypass Gatekeeper; or remove quarantine via Terminal: `xattr -dr com.apple.quarantine rct-highscores.app`.
-  - Outputs to your OpenRCT2 user folder when only `CSS0.DAT` is provided; merges if both files are dropped.
+	- Outputs next to the app by default when only `CSS0.DAT` is provided; merges if both files are dropped (in-place if a highscores.dat was dropped).
 - Linux AppImage
   - Download `rct-highscores-*.AppImage`, then: `chmod +x rct-highscores-*.AppImage` and double‑click.
   - Optional: run once to integrate into your desktop menu; after integration you can drag files onto the launcher/icon if supported by your environment.
-  - As with other binaries, a single `CSS0.DAT` generates to the default OpenRCT2 folder; adding a `highscores.dat` performs an in‑place merge.
+	- As with other binaries, a single `CSS0.DAT` generates `highscores.dat` next to the AppImage; adding a `highscores.dat` performs an in‑place merge if that file is one of the dropped items.
 
 Usage
 - Preferred (after installing the package locally):
